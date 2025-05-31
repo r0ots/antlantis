@@ -56,9 +56,7 @@ module.exports = (env, argv) => {
         title: "Ant Simulation",
       }),
       new CopyWebpackPlugin({
-        patterns: [
-          { from: "src/assets", to: "assets", noErrorOnMissing: true },
-        ],
+        patterns: [{ from: "assets", to: "assets", noErrorOnMissing: true }],
       }),
     ],
     performance: {

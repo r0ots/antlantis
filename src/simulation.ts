@@ -4,12 +4,15 @@ interface Circle {
   radius: number;
   vx: number;
   vy: number;
-  color: string;
   facingRight: boolean;
 }
 
 const canvas = document.getElementById("simulationCanvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
+
+// Load the ant image
+const antImage = new Image();
+antImage.src = "assets/fourmi.png"; // Path to your image
 
 let mouseX = 0;
 let mouseY = 0;
@@ -17,7 +20,6 @@ let mouseY = 0;
 const numCircles = 5;
 const circles: Circle[] = [];
 const circleRadius = 20;
-const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FED766", "#F67280"];
 
 function resizeCanvas() {
   canvas.width = window.innerWidth * 0.9;
@@ -39,7 +41,6 @@ function initCircles() {
       radius: circleRadius,
       vx: 0,
       vy: 0,
-      color: colors[i % colors.length],
       facingRight: false,
     });
   }
@@ -49,15 +50,22 @@ function drawCircle(circle: Circle) {
   ctx.save(); // Save the current state
   ctx.translate(circle.x, circle.y); // Move to the circle's position
 
-  // Flip if facingRight is true (assuming emoji faces left by default)
+  // Flip if facingRight is true
   if (circle.facingRight) {
     ctx.scale(-1, 1);
   }
 
-  ctx.font = `${circle.radius * 1.5}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🐜", 0, 0); // Draw at the new origin (0,0)
+  // Draw the image
+  // Adjust width and height as needed, using circle.radius for sizing
+  const drawWidth = circle.radius * 2;
+  const drawHeight = circle.radius * 2;
+  ctx.drawImage(
+    antImage,
+    -drawWidth / 2,
+    -drawHeight / 2,
+    drawWidth,
+    drawHeight
+  );
 
   ctx.restore(); // Restore the original state
 }
@@ -146,5 +154,13 @@ function gameLoop() {
 }
 
 resizeCanvas();
-initCircles();
-gameLoop();
+
+// Ensure image is loaded before starting the game
+antImage.onload = () => {
+  initCircles();
+  gameLoop();
+};
+
+antImage.onerror = () => {
+  console.error("Failed to load ant image at path: assets/fourmi.png");
+};
