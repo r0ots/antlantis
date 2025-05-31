@@ -5,6 +5,9 @@ interface Circle {
   vx: number;
   vy: number;
   facingRight: boolean;
+  animationPhase: number; // For walking animation
+  prevX: number; // Previous x position
+  prevY: number; // Previous y position
 }
 
 const canvas = document.getElementById("simulationCanvas") as HTMLCanvasElement;
@@ -35,25 +38,57 @@ document.addEventListener("mousemove", (event) => {
 
 function initCircles() {
   for (let i = 0; i < numCircles; i++) {
+    const initialX =
+      Math.random() * (canvas.width - circleRadius * 2) + circleRadius;
+    const initialY =
+      Math.random() * (canvas.height - circleRadius * 2) + circleRadius;
     circles.push({
-      x: Math.random() * (canvas.width - circleRadius * 2) + circleRadius,
-      y: Math.random() * (canvas.height - circleRadius * 2) + circleRadius,
+      x: initialX,
+      y: initialY,
       radius: circleRadius,
       vx: 0,
       vy: 0,
       facingRight: false,
+      animationPhase: Math.random() * Math.PI * 2, // Start with a random phase
+      prevX: initialX, // Initialize prevX
+      prevY: initialY, // Initialize prevY
     });
   }
 }
 
 function drawCircle(circle: Circle) {
   ctx.save(); // Save the current state
-  ctx.translate(circle.x, circle.y); // Move to the circle's position
+
+  // Animation parameters
+  const bobbleAmplitude = circle.radius * 0.1; // How much it bobs
+  const bobbleSpeed = 0.3; // How fast it bobs
+  const rotationAmplitude = 0.1; // Radians, for wiggling
+  const movementThreshold = 0.05; // Minimum pixel displacement to trigger animation
+
+  let yOffset = 0;
+  let angle = 0;
+
+  const actualDx = circle.x - circle.prevX;
+  const actualDy = circle.y - circle.prevY;
+
+  // Apply animation only if actual displacement is above threshold
+  if (
+    Math.abs(actualDx) > movementThreshold ||
+    Math.abs(actualDy) > movementThreshold
+  ) {
+    yOffset = Math.sin(circle.animationPhase * bobbleSpeed) * bobbleAmplitude;
+    angle =
+      Math.sin(circle.animationPhase * bobbleSpeed * 0.5) * rotationAmplitude; // Slower rotation
+  }
+
+  ctx.translate(circle.x, circle.y + yOffset); // Move to the circle's position, add bobble
 
   // Flip if facingRight is true
   if (circle.facingRight) {
     ctx.scale(-1, 1);
   }
+
+  ctx.rotate(angle); // Apply wiggle rotation
 
   // Draw the image
   // Adjust width and height as needed, using circle.radius for sizing
@@ -62,7 +97,7 @@ function drawCircle(circle: Circle) {
   ctx.drawImage(
     antImage,
     -drawWidth / 2,
-    -drawHeight / 2,
+    -drawHeight / 2, // Center the image
     drawWidth,
     drawHeight
   );
@@ -72,6 +107,10 @@ function drawCircle(circle: Circle) {
 
 function updateCircles() {
   circles.forEach((circle) => {
+    // Store current position as previous position before any updates
+    circle.prevX = circle.x;
+    circle.prevY = circle.y;
+
     // Move towards mouse
     const dx = mouseX - circle.x;
     const dy = mouseY - circle.y;
@@ -91,9 +130,11 @@ function updateCircles() {
       // Prevent shaking when close
       circle.vx = (dx / dist) * speed;
       circle.vy = (dy / dist) * speed;
+      circle.animationPhase += 1; // Increment animation phase when intending to move
     } else {
       circle.vx = 0;
       circle.vy = 0;
+      // Optionally reset animationPhase or let it pause: circle.animationPhase = 0;
     }
 
     circle.x += circle.vx;
