@@ -63,7 +63,7 @@ function drawCircle(circle: Circle) {
   const bobbleAmplitude = circle.radius * 0.1; // How much it bobs
   const bobbleSpeed = 0.3; // How fast it bobs
   const rotationAmplitude = 0.1; // Radians, for wiggling
-  const movementThreshold = 0.05; // Minimum pixel displacement to trigger animation
+  const movementThreshold = 0.1; // Minimum pixel displacement to trigger animation
 
   let yOffset = 0;
   let angle = 0;
