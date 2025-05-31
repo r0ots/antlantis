@@ -53,7 +53,7 @@ module.exports = (env, argv) => {
         template: "./src/index.html",
         filename: "index.html",
         inject: "body",
-        title: "Phaser Game",
+        title: "Ant Simulation",
       }),
       new CopyWebpackPlugin({
         patterns: [

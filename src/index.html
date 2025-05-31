@@ -3,24 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <title>Ant Simulation</title>
     <style>
       body {
         margin: 0;
-        padding: 0;
-        background-color: #000;
+        overflow: hidden;
+        background-color: #f0f0f0;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        overflow: hidden;
       }
       canvas {
         display: block;
+        border: 1px solid black;
       }
     </style>
   </head>
   <body>
-    <div id="game-container"></div>
+    <canvas id="simulationCanvas"></canvas>
   </body>
 </html>
