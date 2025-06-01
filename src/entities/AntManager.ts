@@ -44,6 +44,8 @@ export class AntManager {
         isCarrying: false,
         speed: antSpeed,
         animationPhase: Math.random() * Math.PI * 2,
+        previousX: position.x,
+        previousY: position.y,
       });
 
       this.ants.push(ant);

@@ -30,6 +30,8 @@ export interface AntData {
   isCarrying: boolean;
   speed: number;
   animationPhase: number;
+  previousX: number;
+  previousY: number;
 }
 
 export interface CastleData {

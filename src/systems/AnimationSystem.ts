@@ -4,7 +4,7 @@ import { AntManager } from "../entities/AntManager";
 import { VISUAL_CONFIG } from "./CollisionSystem";
 
 export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
-  bobbleSpeed: 0.5,
+  bobbleSpeed: 0.4,
   rotationAmplitude: 0.06,
   movementThreshold: 0.8,
 };
@@ -25,13 +25,17 @@ export class AnimationSystem {
     const body = ant.body as Phaser.Physics.Arcade.Body;
     ant.setFlipX(body.velocity.x > 0);
 
-    const isMoving =
-      body.velocity.length() > this.animationConfig.movementThreshold;
+    // Check actual movement by comparing current position to previous position
+    const actualMovement = Math.sqrt(
+      Math.pow(ant.x - antData.previousX, 2) +
+        Math.pow(ant.y - antData.previousY, 2)
+    );
+    const isMoving = actualMovement > this.animationConfig.movementThreshold;
 
     if (isMoving) {
       this.antManager.updateAnimationPhase(
         ant,
-        this.animationConfig.bobbleSpeed * 0.3 // Slower hopping
+        this.animationConfig.bobbleSpeed
       );
 
       // Hopping animation - creates small discrete jumps
@@ -44,9 +48,12 @@ export class AnimationSystem {
       ant.y += hop * -0.8; // Negative to hop upward
       ant.setRotation(wiggle);
     } else {
-      // Gradually return to neutral position when not moving
       ant.setRotation(ant.rotation * VISUAL_CONFIG.animationDamping);
     }
+
+    // Update previous position for next frame
+    antData.previousX = ant.x;
+    antData.previousY = ant.y;
   }
 
   public setAnimationConfig(config: AnimationConfig): void {
