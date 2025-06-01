@@ -159,6 +159,9 @@ export default class AntSimulationScene extends Phaser.Scene {
       this.animationSystem.updateAntAnimation(ant);
     });
 
+    // Update collision system to handle harvest completion
+    this.collisionSystem.update();
+
     this.updateUI();
   }
 }

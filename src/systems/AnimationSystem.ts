@@ -7,6 +7,8 @@ export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
   bobbleSpeed: 0.4,
   rotationAmplitude: 0.06,
   movementThreshold: 0.8,
+  harvestRotationSpeed: 0.15, // Faster rotation during harvest
+  harvestRotationAmplitude: 0.3, // More pronounced rotation for harvest
 };
 
 export class AnimationSystem {
@@ -23,6 +25,41 @@ export class AnimationSystem {
     if (!antData) return;
 
     const body = ant.body as Phaser.Physics.Arcade.Body;
+
+    // Handle harvest animation state
+    if (antData.isHarvesting && antData.harvestTarget) {
+      // Stop ant movement during harvest
+      body.setVelocity(0, 0);
+
+      // Face the harvest target
+      ant.setFlipX(antData.harvestTarget.x < ant.x);
+
+      // Update harvest animation phase
+      this.antManager.updateHarvestAnimation(
+        ant,
+        this.animationConfig.harvestRotationSpeed
+      );
+
+      // Create hitting/rotating animation
+      const hitCycle = Math.sin(antData.harvestAnimationPhase);
+      const hitRotation =
+        hitCycle * this.animationConfig.harvestRotationAmplitude;
+
+      // Add rapid back-and-forth motion to simulate hitting
+      const rapidHit = Math.sin(antData.harvestAnimationPhase * 4) * 0.1;
+
+      ant.setRotation(hitRotation + rapidHit);
+
+      // Small forward motion during hit
+      const hitForward =
+        Math.max(0, Math.sin(antData.harvestAnimationPhase * 4)) * 3;
+      const direction = antData.harvestTarget.x > ant.x ? 1 : -1;
+      ant.x += hitForward * direction * 0.1;
+
+      return;
+    }
+
+    // Normal animation (existing code)
     ant.setFlipX(body.velocity.x > 0);
 
     // Check actual movement by comparing current position to previous position

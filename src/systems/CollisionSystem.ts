@@ -39,18 +39,30 @@ export class CollisionSystem {
     const clayPackSprite = clayPack as Phaser.GameObjects.Sprite;
     const antData = this.antManager.getAntData(antSprite);
 
-    if (
-      antData &&
-      !antData.isCarrying &&
-      Phaser.Math.Distance.Between(
-        antSprite.x,
-        antSprite.y,
-        clayPackSprite.x,
-        clayPackSprite.y
-      ) <= this.config.harvesting.harvestDistance
-    ) {
-      this.antManager.setCarrying(antSprite, true);
-      this.clayPackManager.removeClayPack(clayPackSprite);
+    if (!antData || antData.isCarrying) return;
+
+    const distance = Phaser.Math.Distance.Between(
+      antSprite.x,
+      antSprite.y,
+      clayPackSprite.x,
+      clayPackSprite.y
+    );
+
+    if (distance <= this.config.harvesting.harvestDistance) {
+      if (!antData.isHarvesting) {
+        // Start harvest animation
+        this.antManager.startHarvesting(antSprite, clayPackSprite);
+      } else if (
+        this.antManager.isHarvestComplete(
+          antSprite,
+          this.config.harvesting.harvestAnimationDuration
+        )
+      ) {
+        // Complete the harvest after animation duration
+        this.antManager.setCarrying(antSprite, true);
+        this.antManager.stopHarvesting(antSprite);
+        this.clayPackManager.removeClayPack(clayPackSprite);
+      }
     }
   };
 
@@ -89,5 +101,28 @@ export class CollisionSystem {
 
   public getCastleData(): CastleData {
     return this.castleData;
+  }
+
+  public update(): void {
+    // Check all harvesting ants to see if any need to complete harvest
+    // (in case they're no longer overlapping but were harvesting)
+    this.antManager.getAnts().forEach((ant) => {
+      const antData = this.antManager.getAntData(ant);
+      if (antData && antData.isHarvesting && antData.harvestTarget) {
+        if (
+          this.antManager.isHarvestComplete(
+            ant,
+            this.config.harvesting.harvestAnimationDuration
+          )
+        ) {
+          // If harvest target still exists, complete the harvest
+          if (antData.harvestTarget.active) {
+            this.antManager.setCarrying(ant, true);
+            this.clayPackManager.removeClayPack(antData.harvestTarget);
+          }
+          this.antManager.stopHarvesting(ant);
+        }
+      }
+    });
   }
 }

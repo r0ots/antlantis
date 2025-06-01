@@ -21,6 +21,13 @@ export class BehaviorSystem {
     const antData = this.antManager.getAntData(ant);
     if (!antData) return;
 
+    // Don't move if harvesting
+    if (antData.isHarvesting) {
+      const body = ant.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(0, 0);
+      return;
+    }
+
     let target: { x: number; y: number } | null = null;
 
     if (!antData.isCarrying) {

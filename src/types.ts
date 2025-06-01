@@ -16,6 +16,7 @@ export interface SimulationConfig {
   harvesting: {
     harvestDistance: number;
     dropOffDistance: number;
+    harvestAnimationDuration: number;
   };
 }
 
@@ -23,6 +24,8 @@ export interface AnimationConfig {
   bobbleSpeed: number;
   rotationAmplitude: number;
   movementThreshold: number;
+  harvestRotationSpeed: number;
+  harvestRotationAmplitude: number;
 }
 
 // Runtime data types
@@ -32,6 +35,10 @@ export interface AntData {
   animationPhase: number;
   previousX: number;
   previousY: number;
+  isHarvesting: boolean;
+  harvestStartTime: number;
+  harvestTarget: Phaser.GameObjects.Sprite | null;
+  harvestAnimationPhase: number;
 }
 
 export interface CastleData {

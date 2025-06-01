@@ -11,8 +11,9 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   clayPackSize: { width: 45, height: 45 },
   castleSize: { width: 120, height: 120 },
   harvesting: {
-    harvestDistance: 30,
+    harvestDistance: 50,
     dropOffDistance: 40,
+    harvestAnimationDuration: 3000, // 3 seconds in milliseconds
   },
 };
 
@@ -46,6 +47,11 @@ export class AntManager {
         animationPhase: Math.random() * Math.PI * 2,
         previousX: position.x,
         previousY: position.y,
+        // Initialize harvest animation properties
+        isHarvesting: false,
+        harvestStartTime: 0,
+        harvestTarget: null,
+        harvestAnimationPhase: 0,
       });
 
       this.ants.push(ant);
@@ -84,6 +90,49 @@ export class AntManager {
     if (data) {
       data.animationPhase += increment;
     }
+  }
+
+  public startHarvesting(
+    ant: Phaser.GameObjects.Sprite,
+    target: Phaser.GameObjects.Sprite
+  ): void {
+    const data = this.antData.get(ant);
+    if (data) {
+      data.isHarvesting = true;
+      data.harvestStartTime = Date.now();
+      data.harvestTarget = target;
+      data.harvestAnimationPhase = 0;
+    }
+  }
+
+  public updateHarvestAnimation(
+    ant: Phaser.GameObjects.Sprite,
+    increment: number
+  ): void {
+    const data = this.antData.get(ant);
+    if (data && data.isHarvesting) {
+      data.harvestAnimationPhase += increment;
+    }
+  }
+
+  public stopHarvesting(ant: Phaser.GameObjects.Sprite): void {
+    const data = this.antData.get(ant);
+    if (data) {
+      data.isHarvesting = false;
+      data.harvestTarget = null;
+      data.harvestAnimationPhase = 0;
+    }
+  }
+
+  public isHarvestComplete(
+    ant: Phaser.GameObjects.Sprite,
+    duration: number
+  ): boolean {
+    const data = this.antData.get(ant);
+    if (data && data.isHarvesting) {
+      return Date.now() - data.harvestStartTime >= duration;
+    }
+    return false;
   }
 
   private findValidSpawnPosition(maxSize: number): { x: number; y: number } {
