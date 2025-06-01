@@ -11,8 +11,8 @@ import { CollisionSystem } from "../systems/CollisionSystem";
 import { GameUI } from "../ui/GameUI";
 
 export const WORLD_CONFIG = {
-  width: 1400,
-  height: 900,
+  width: window.innerWidth || 1400,
+  height: window.innerHeight || 900,
   backgroundColor: "#2d5016", // Forest green
   minDistance: {
     castleToClayPack: 120,
@@ -95,8 +95,10 @@ export default class AntSimulationScene extends Phaser.Scene {
     );
     this.animationSystem = new AnimationSystem(
       this.antManager,
+      this.clayPackManager,
       this.animationConfig,
-      this
+      this,
+      this.simulationConfig.harvesting.damagePerHit
     );
     this.collisionSystem = new CollisionSystem(
       this.antManager,
@@ -165,5 +167,21 @@ export default class AntSimulationScene extends Phaser.Scene {
     this.collisionSystem.update();
 
     this.updateUI();
+  }
+
+  resize(gameSize: { width: number; height: number }): void {
+    // Update world config
+    WORLD_CONFIG.width = gameSize.width;
+    WORLD_CONFIG.height = gameSize.height;
+
+    // Reposition castle to center of new dimensions
+    if (this.castle) {
+      this.castle.setPosition(gameSize.width / 2, gameSize.height / 2);
+    }
+
+    // Update UI positioning if needed
+    if (this.gameUI) {
+      this.gameUI.resize(gameSize);
+    }
   }
 }

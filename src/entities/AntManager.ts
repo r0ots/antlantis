@@ -14,6 +14,8 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
     harvestDistance: 40,
     dropOffDistance: 100,
     harvestAnimationDuration: 3000, // 3 seconds in milliseconds
+    clayPackMaxHitPoints: 5, // Clay packs require 5 hits to destroy
+    damagePerHit: 1, // Each hit does 1 damage
   },
 };
 

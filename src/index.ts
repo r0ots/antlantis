@@ -19,10 +19,10 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [AntSimulationScene],
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    min: { width: 800, height: 600 },
-    max: { width: 1600, height: 1200 },
+    width: "100%",
+    height: "100%",
   },
 };
 

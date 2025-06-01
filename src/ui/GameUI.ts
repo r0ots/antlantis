@@ -63,4 +63,10 @@ export class GameUI {
       ...antStates,
     ]);
   }
+
+  public resize(gameSize: { width: number; height: number }): void {
+    // UI elements are positioned relative to top-left, so they don't need repositioning
+    // The debug text stays in the same position regardless of screen size
+    // This method is here for future UI elements that might need repositioning
+  }
 }

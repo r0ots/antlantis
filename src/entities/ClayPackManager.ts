@@ -1,9 +1,11 @@
 import Phaser from "phaser";
-import { SimulationConfig } from "../types";
+import { SimulationConfig, ClayPackData } from "../types";
 import { WORLD_CONFIG } from "../scenes/AntSimulationScene";
 
 export class ClayPackManager {
   private clayPacks: Phaser.GameObjects.Sprite[] = [];
+  private clayPackData: Map<Phaser.GameObjects.Sprite, ClayPackData> =
+    new Map();
   private scene: Phaser.Scene;
   private castle: Phaser.GameObjects.Sprite;
 
@@ -15,7 +17,7 @@ export class ClayPackManager {
   public createClayPacks(
     config: SimulationConfig
   ): Phaser.GameObjects.Sprite[] {
-    const { clayPackCount, clayPackSize } = config;
+    const { clayPackCount, clayPackSize, harvesting } = config;
 
     for (let i = 0; i < clayPackCount; i++) {
       const position = this.findValidPosition(
@@ -33,6 +35,13 @@ export class ClayPackManager {
       const body = clayPack.body as Phaser.Physics.Arcade.Body;
       body.setImmovable(true);
 
+      // Initialize hit points for this clay pack
+      const clayData: ClayPackData = {
+        hitPoints: harvesting.clayPackMaxHitPoints,
+        maxHitPoints: harvesting.clayPackMaxHitPoints,
+      };
+      this.clayPackData.set(clayPack, clayData);
+
       this.clayPacks.push(clayPack);
     }
 
@@ -43,7 +52,33 @@ export class ClayPackManager {
     return this.clayPacks;
   }
 
+  public getClayPackData(
+    clayPack: Phaser.GameObjects.Sprite
+  ): ClayPackData | undefined {
+    return this.clayPackData.get(clayPack);
+  }
+
+  public damageClayPack(
+    clayPack: Phaser.GameObjects.Sprite,
+    damage: number
+  ): boolean {
+    const clayData = this.clayPackData.get(clayPack);
+    if (!clayData) return false;
+
+    clayData.hitPoints = Math.max(0, clayData.hitPoints - damage);
+
+    // Update visual to show damage (make it more transparent/darker as it takes damage)
+    const healthPercentage = clayData.hitPoints / clayData.maxHitPoints;
+    clayPack.setAlpha(0.3 + healthPercentage * 0.7); // Alpha from 0.3 to 1.0
+    clayPack.setTint(
+      0xffffff * healthPercentage + 0x666666 * (1 - healthPercentage)
+    ); // Darker as damaged
+
+    return clayData.hitPoints <= 0;
+  }
+
   public removeClayPack(clayPack: Phaser.GameObjects.Sprite): void {
+    this.clayPackData.delete(clayPack);
     clayPack.destroy();
     this.clayPacks = this.clayPacks.filter((pack) => pack !== clayPack);
   }

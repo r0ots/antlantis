@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { AnimationConfig } from "../types";
 import { AntManager } from "../entities/AntManager";
+import { ClayPackManager } from "../entities/ClayPackManager";
 import { VISUAL_CONFIG } from "./CollisionSystem";
 
 export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
@@ -13,17 +14,23 @@ export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
 
 export class AnimationSystem {
   private antManager: AntManager;
+  private clayPackManager: ClayPackManager;
   private animationConfig: AnimationConfig;
   private scene: Phaser.Scene;
+  private damagePerHit: number;
 
   constructor(
     antManager: AntManager,
+    clayPackManager: ClayPackManager,
     animationConfig: AnimationConfig,
-    scene: Phaser.Scene
+    scene: Phaser.Scene,
+    damagePerHit: number = 1
   ) {
     this.antManager = antManager;
+    this.clayPackManager = clayPackManager;
     this.animationConfig = animationConfig;
     this.scene = scene;
+    this.damagePerHit = damagePerHit;
   }
 
   public updateAntAnimation(ant: Phaser.GameObjects.Sprite): void {
@@ -37,8 +44,125 @@ export class AnimationSystem {
       // Stop ant movement during harvest
       body.setVelocity(0, 0);
 
-      // Face the harvest target
-      ant.setFlipX(antData.harvestTarget.x < ant.x);
+      // Face the harvest target (fixed direction)
+      ant.setFlipX(antData.harvestTarget.x > ant.x);
+
+      // Store original position if not already stored
+      if (!antData.originalHarvestX || !antData.originalHarvestY) {
+        antData.originalHarvestX = ant.x;
+        antData.originalHarvestY = ant.y;
+      }
+
+      // Check for cooldown period (1 second = 1000ms)
+      const currentTime = this.scene.time.now;
+      const cooldownDuration = 1000; // 1 second cooldown
+      const knockbackDuration = 200; // 200ms knockback duration
+      const stunDuration = 1000; // 1 second stun duration
+
+      // Handle stun effect - takes priority over everything else
+      if (antData.isStunned && antData.stunStartTime) {
+        const timeSinceStun = currentTime - antData.stunStartTime;
+        if (timeSinceStun < stunDuration) {
+          // During stun - completely immobilize the ant at knocked-back position
+          body.setVelocity(0, 0); // Stop all movement
+          ant.setRotation(0); // Reset rotation
+
+          // Keep ant locked at their stunned position
+          if (antData.originalHarvestX && antData.originalHarvestY) {
+            body.x = antData.originalHarvestX - body.halfWidth;
+            body.y = antData.originalHarvestY - body.halfHeight;
+          }
+
+          // Optional: Add visual stun effect (slight trembling or different tint)
+          const stunTremble = Math.sin(currentTime * 0.02) * 0.5; // Slight trembling
+          ant.y += stunTremble;
+
+          // Update previous position to current position
+          antData.previousX = ant.x;
+          antData.previousY = ant.y;
+          return; // Skip all other animations during stun
+        } else {
+          // Stun finished, clear stun state
+          antData.isStunned = false;
+          antData.stunStartTime = undefined;
+        }
+      }
+
+      // Handle knockback effect - happens instantly, not over time
+      if (antData.knockbackStartTime && antData.knockbackDistance) {
+        // Calculate knockback direction (opposite of target direction)
+        const directionX = antData.harvestTarget.x - antData.originalHarvestX!;
+        const directionY = antData.harvestTarget.y - antData.originalHarvestY!;
+        const distance = Math.sqrt(
+          directionX * directionX + directionY * directionY
+        );
+        const normalizedX = directionX / distance;
+        const normalizedY = directionY / distance;
+
+        // Calculate final knockback position
+        const knockbackX =
+          antData.originalHarvestX! - normalizedX * antData.knockbackDistance!;
+        const knockbackY =
+          antData.originalHarvestY! - normalizedY * antData.knockbackDistance!;
+
+        // Instantly move the physics body to knocked-back position
+        body.x = knockbackX - body.halfWidth;
+        body.y = knockbackY - body.halfHeight;
+
+        // Update the original harvest position to the knocked-back position
+        antData.originalHarvestX = knockbackX;
+        antData.originalHarvestY = knockbackY;
+
+        // Clear knockback state and start stun immediately
+        antData.knockbackStartTime = undefined;
+        antData.knockbackDistance = undefined;
+        antData.isStunned = true;
+        antData.stunStartTime = currentTime;
+
+        // Update previous position
+        antData.previousX = ant.x;
+        antData.previousY = ant.y;
+        return;
+      }
+
+      // After handling stun and knockback, check if ant is close enough to attack
+      const distanceToTarget = Math.sqrt(
+        Math.pow(antData.harvestTarget.x - ant.x, 2) +
+          Math.pow(antData.harvestTarget.y - ant.y, 2)
+      );
+      const attackRange = 50; // Increased range to ensure ants can attack when close
+
+      // If ant is too far from target, let them move normally (no headbutt animation)
+      if (distanceToTarget > attackRange) {
+        // Reset rotation and let normal movement/pathfinding take over
+        ant.setRotation(0);
+        antData.previousX = ant.x;
+        antData.previousY = ant.y;
+        return; // Skip headbutt animation, let ant walk closer
+      }
+
+      if (antData.isInCooldown && antData.lastHitTime) {
+        const timeSinceHit = currentTime - antData.lastHitTime;
+        if (timeSinceHit < cooldownDuration) {
+          // During cooldown - don't lock position, let ant move freely
+          // This allows the ant to walk back to the target after knockback
+          ant.setRotation(0); // Reset rotation only
+
+          // Update previous position to current position
+          antData.previousX = ant.x;
+          antData.previousY = ant.y;
+
+          // Return here to skip headbutt animation but allow normal movement
+          return;
+        } else {
+          // Cooldown finished, reset for next attack
+          antData.isInCooldown = false;
+          antData.harvestAnimationPhase = 0; // Reset animation phase for clean start
+          // Update original harvest position to current position for next attack
+          antData.originalHarvestX = ant.x;
+          antData.originalHarvestY = ant.y;
+        }
+      }
 
       // Update harvest animation phase
       this.antManager.updateHarvestAnimation(
@@ -46,34 +170,95 @@ export class AnimationSystem {
         this.animationConfig.harvestRotationSpeed
       );
 
-      // Create hitting/rotating animation - only rotation, no position changes
-      const hitCycle = Math.sin(antData.harvestAnimationPhase);
-      const hitRotation =
-        hitCycle * this.animationConfig.harvestRotationAmplitude;
+      // Headbutt animation - move forward and backward towards target
+      const headbuttCycle = Math.sin(antData.harvestAnimationPhase * 2); // Faster cycle for headbutt
+      const headbuttDistance = 8; // Distance to move forward during headbutt
 
-      // Add rapid back-and-forth motion to simulate hitting
-      const rapidHit = Math.sin(antData.harvestAnimationPhase * 4) * 0.1;
+      // Calculate direction towards target
+      const directionX = antData.harvestTarget.x - ant.x;
+      const directionY = antData.harvestTarget.y - ant.y;
+      const distance = Math.sqrt(
+        directionX * directionX + directionY * directionY
+      );
 
-      ant.setRotation(hitRotation + rapidHit);
+      // Normalize direction
+      const normalizedX = directionX / distance;
+      const normalizedY = directionY / distance;
 
-      // Spawn hit effect when hitting (at the peak of the rapid hit cycle)
+      // Apply headbutt motion - move forward when headbuttCycle is positive
+      const headbuttIntensity = Math.max(0, headbuttCycle) * headbuttDistance;
+
+      // Apply headbutt movement - use non-null assertion since we just ensured they exist
+      ant.x = antData.originalHarvestX! + normalizedX * headbuttIntensity;
+      ant.y = antData.originalHarvestY! + normalizedY * headbuttIntensity;
+
+      // Add slight up-down head movement for more realistic headbutt
+      const headBobbing = Math.sin(antData.harvestAnimationPhase * 3) * 1.5;
+      ant.y += headBobbing;
+
+      // Diving headbutt rotation - tilt forward during the attack
+      const diveRotation =
+        headbuttIntensity > 0
+          ? (headbuttIntensity / headbuttDistance) * 0.4
+          : 0; // Tilt forward up to 0.4 radians (~23 degrees)
+      const flipMultiplier = ant.flipX ? 1 : -1; // Adjust rotation direction based on flip
+      ant.setRotation(diveRotation * flipMultiplier);
+
+      // Spawn hit effect when at maximum forward position
       const currentHitPhase = Math.floor(
-        (antData.harvestAnimationPhase * 4) / (Math.PI * 2)
+        (antData.harvestAnimationPhase * 2) / (Math.PI * 2)
       );
       if (
         currentHitPhase > antData.lastHitPhase &&
-        Math.sin(antData.harvestAnimationPhase * 4) > 0.999
+        headbuttCycle > 0.9 && // At the peak of the forward motion
+        !antData.isInCooldown && // Only hit if not in cooldown
+        !antData.knockbackStartTime && // Only hit if not in knockback
+        !antData.isStunned // Only hit if not stunned
       ) {
         this.spawnHitEffect(ant, antData.harvestTarget);
         antData.lastHitPhase = currentHitPhase;
+        antData.lastHitTime = currentTime;
+        antData.isInCooldown = true;
+
+        // Damage the clay pack
+        const isDestroyed = this.clayPackManager.damageClayPack(
+          antData.harvestTarget,
+          this.damagePerHit
+        );
+
+        // If clay pack is destroyed, stop harvesting and let ant carry clay
+        if (isDestroyed) {
+          this.antManager.setCarrying(ant, true);
+          this.antManager.stopHarvesting(ant);
+          this.clayPackManager.removeClayPack(antData.harvestTarget);
+          // Clear persistent target since this clay pack is destroyed
+          antData.persistentTarget = null;
+        }
+
+        // Start knockback effect (stun will start after knockback ends)
+        antData.knockbackStartTime = currentTime;
+        antData.knockbackDistance = 35; // Increased distance to force walking back
       }
 
-      // Keep ant position fixed - no movement during harvest
       // Update previous position to current position to prevent drift detection
       antData.previousX = ant.x;
       antData.previousY = ant.y;
 
       return;
+    } else {
+      // Reset original harvest position and cooldown state when not harvesting
+      const antData = this.antManager.getAntData(ant);
+      if (antData) {
+        antData.originalHarvestX = undefined;
+        antData.originalHarvestY = undefined;
+        antData.isInCooldown = false;
+        antData.lastHitTime = undefined;
+        antData.knockbackStartTime = undefined;
+        antData.knockbackDistance = undefined;
+        antData.isStunned = false;
+        antData.stunStartTime = undefined;
+        // Don't clear persistent target here - let behavior system handle it
+      }
     }
 
     // Normal animation (existing code)

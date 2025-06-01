@@ -17,6 +17,8 @@ export interface SimulationConfig {
     harvestDistance: number;
     dropOffDistance: number;
     harvestAnimationDuration: number;
+    clayPackMaxHitPoints: number;
+    damagePerHit: number;
   };
 }
 
@@ -40,8 +42,22 @@ export interface AntData {
   harvestTarget: Phaser.GameObjects.Sprite | null;
   harvestAnimationPhase: number;
   lastHitPhase: number;
+  originalHarvestX?: number;
+  originalHarvestY?: number;
+  lastHitTime?: number;
+  isInCooldown?: boolean;
+  knockbackStartTime?: number;
+  knockbackDistance?: number;
+  stunStartTime?: number;
+  isStunned?: boolean;
+  persistentTarget?: Phaser.GameObjects.Sprite | null;
 }
 
 export interface CastleData {
   clayInventory: number;
+}
+
+export interface ClayPackData {
+  hitPoints: number;
+  maxHitPoints: number;
 }

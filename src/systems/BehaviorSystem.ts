@@ -32,9 +32,20 @@ export class BehaviorSystem {
     let target: { x: number; y: number } | null = null;
 
     if (!antData.isCarrying) {
-      // Find nearest clay pack
-      target = this.clayPackManager.findNearestClayPack(ant);
+      // Check if we have a persistent target and it still exists
+      if (antData.persistentTarget && antData.persistentTarget.active) {
+        target = antData.persistentTarget;
+      } else {
+        // Find nearest clay pack and make it our persistent target
+        const nearestClayPack = this.clayPackManager.findNearestClayPack(ant);
+        if (nearestClayPack) {
+          antData.persistentTarget = nearestClayPack;
+          target = nearestClayPack;
+        }
+      }
     } else {
+      // Clear persistent target when carrying clay
+      antData.persistentTarget = null;
       // Go to castle
       target = this.castle;
     }
