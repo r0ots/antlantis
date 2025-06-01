@@ -78,6 +78,11 @@ export class ClayPackManager {
   }
 
   public removeClayPack(clayPack: Phaser.GameObjects.Sprite): void {
+    // Add null check for defensive programming
+    if (!clayPack) {
+      return;
+    }
+
     this.clayPackData.delete(clayPack);
     clayPack.destroy();
     this.clayPacks = this.clayPacks.filter((pack) => pack !== clayPack);

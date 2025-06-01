@@ -41,6 +41,13 @@ export class AnimationSystem {
 
     // Handle harvest animation state
     if (antData.isHarvesting && antData.harvestTarget) {
+      // Add null check to prevent errors if target was destroyed
+      if (!antData.harvestTarget || !antData.harvestTarget.active) {
+        // Target no longer exists, stop harvesting
+        this.antManager.stopHarvesting(ant);
+        return;
+      }
+
       // Stop ant movement during harvest
       body.setVelocity(0, 0);
 
@@ -85,11 +92,22 @@ export class AnimationSystem {
           // Stun finished, clear stun state
           antData.isStunned = false;
           antData.stunStartTime = undefined;
+          // Temporarily stop harvesting so ant can move back to target
+          this.antManager.stopHarvesting(ant);
         }
       }
 
       // Handle knockback effect - happens instantly, not over time
       if (antData.knockbackStartTime && antData.knockbackDistance) {
+        // Add null check for harvest target
+        if (!antData.harvestTarget || !antData.harvestTarget.active) {
+          // Target no longer exists, clear knockback state and stop harvesting
+          antData.knockbackStartTime = undefined;
+          antData.knockbackDistance = undefined;
+          this.antManager.stopHarvesting(ant);
+          return;
+        }
+
         // Calculate knockback direction (opposite of target direction)
         const directionX = antData.harvestTarget.x - antData.originalHarvestX!;
         const directionY = antData.harvestTarget.y - antData.originalHarvestY!;
@@ -126,6 +144,13 @@ export class AnimationSystem {
       }
 
       // After handling stun and knockback, check if ant is close enough to attack
+      // Add null check for harvest target
+      if (!antData.harvestTarget || !antData.harvestTarget.active) {
+        // Target no longer exists, stop harvesting
+        this.antManager.stopHarvesting(ant);
+        return;
+      }
+
       const distanceToTarget = Math.sqrt(
         Math.pow(antData.harvestTarget.x - ant.x, 2) +
           Math.pow(antData.harvestTarget.y - ant.y, 2)
@@ -230,7 +255,10 @@ export class AnimationSystem {
         if (isDestroyed) {
           this.antManager.setCarrying(ant, true);
           this.antManager.stopHarvesting(ant);
-          this.clayPackManager.removeClayPack(antData.harvestTarget);
+          // Only remove clay pack if it still exists
+          if (antData.harvestTarget && antData.harvestTarget.active) {
+            this.clayPackManager.removeClayPack(antData.harvestTarget);
+          }
           // Clear persistent target since this clay pack is destroyed
           antData.persistentTarget = null;
         }

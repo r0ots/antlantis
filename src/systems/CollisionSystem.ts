@@ -50,19 +50,10 @@ export class CollisionSystem {
 
     if (distance <= this.config.harvesting.harvestDistance) {
       if (!antData.isHarvesting) {
-        // Start harvest animation
+        // Start harvest animation - either first time or resuming after knockback
         this.antManager.startHarvesting(antSprite, clayPackSprite);
-      } else if (
-        this.antManager.isHarvestComplete(
-          antSprite,
-          this.config.harvesting.harvestAnimationDuration
-        )
-      ) {
-        // Complete the harvest after animation duration
-        this.antManager.setCarrying(antSprite, true);
-        this.antManager.stopHarvesting(antSprite);
-        this.clayPackManager.removeClayPack(clayPackSprite);
       }
+      // Removed old time-based clay pack removal - now handled by hit-based system in AnimationSystem
     }
   };
 
@@ -104,25 +95,7 @@ export class CollisionSystem {
   }
 
   public update(): void {
-    // Check all harvesting ants to see if any need to complete harvest
-    // (in case they're no longer overlapping but were harvesting)
-    this.antManager.getAnts().forEach((ant) => {
-      const antData = this.antManager.getAntData(ant);
-      if (antData && antData.isHarvesting && antData.harvestTarget) {
-        if (
-          this.antManager.isHarvestComplete(
-            ant,
-            this.config.harvesting.harvestAnimationDuration
-          )
-        ) {
-          // If harvest target still exists, complete the harvest
-          if (antData.harvestTarget.active) {
-            this.antManager.setCarrying(ant, true);
-            this.clayPackManager.removeClayPack(antData.harvestTarget);
-          }
-          this.antManager.stopHarvesting(ant);
-        }
-      }
-    });
+    // Removed old time-based harvest completion logic
+    // Clay pack destruction is now handled by the hit-based system in AnimationSystem
   }
 }
