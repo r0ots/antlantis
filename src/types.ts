@@ -33,34 +33,33 @@ export interface ClayPack {
 }
 
 export interface AnimationConfig {
-  bobbleAmplitude: number;
   bobbleSpeed: number;
   rotationAmplitude: number;
   movementThreshold: number;
 }
 
 export interface SimulationConfig {
-  numCircles: number;
-  circleRadius: {
+  numAnts: number;
+  antSpeed: {
     min: number;
     max: number;
   };
-  speed: {
+  antSize: {
     min: number;
     max: number;
   };
-  castle: {
+  clayPackCount: number;
+  clayPackSize: {
     width: number;
     height: number;
   };
-  clayPacks: {
-    count: number;
+  castleSize: {
     width: number;
     height: number;
   };
   harvesting: {
-    harvestDistance: number; // Distance at which ant can harvest clay pack
-    dropOffDistance: number; // Distance at which ant can drop off at castle
+    harvestDistance: number;
+    dropOffDistance: number;
   };
 }
 
