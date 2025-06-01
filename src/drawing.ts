@@ -1,4 +1,4 @@
-import { Circle, AnimationConfig } from "./types";
+import { Circle, AnimationConfig, Castle, ClayPack } from "./types";
 
 export class AntRenderer {
   private antImage: HTMLImageElement;
@@ -74,5 +74,79 @@ export class AntRenderer {
     );
 
     ctx.restore(); // Restore the original state
+  }
+}
+
+export class CastleRenderer {
+  private castleImage: HTMLImageElement;
+
+  constructor(imagePath: string) {
+    this.castleImage = new Image();
+    this.castleImage.src = imagePath;
+  }
+
+  public isImageLoaded(): boolean {
+    return this.castleImage.complete && this.castleImage.naturalHeight !== 0;
+  }
+
+  public onImageLoad(callback: () => void): void {
+    this.castleImage.onload = callback;
+  }
+
+  public onImageError(callback: () => void): void {
+    this.castleImage.onerror = callback;
+  }
+
+  public drawCastle(ctx: CanvasRenderingContext2D, castle: Castle): void {
+    ctx.save();
+
+    // Draw the castle image at the specified position and size
+    ctx.drawImage(
+      this.castleImage,
+      castle.x - castle.width / 2, // Center horizontally
+      castle.y - castle.height / 2, // Center vertically
+      castle.width,
+      castle.height
+    );
+
+    ctx.restore();
+  }
+}
+
+export class ClayPackRenderer {
+  private clayPackImage: HTMLImageElement;
+
+  constructor(imagePath: string) {
+    this.clayPackImage = new Image();
+    this.clayPackImage.src = imagePath;
+  }
+
+  public isImageLoaded(): boolean {
+    return (
+      this.clayPackImage.complete && this.clayPackImage.naturalHeight !== 0
+    );
+  }
+
+  public onImageLoad(callback: () => void): void {
+    this.clayPackImage.onload = callback;
+  }
+
+  public onImageError(callback: () => void): void {
+    this.clayPackImage.onerror = callback;
+  }
+
+  public drawClayPack(ctx: CanvasRenderingContext2D, clayPack: ClayPack): void {
+    ctx.save();
+
+    // Draw the clay pack image at the specified position and size
+    ctx.drawImage(
+      this.clayPackImage,
+      clayPack.x - clayPack.width / 2, // Center horizontally
+      clayPack.y - clayPack.height / 2, // Center vertically
+      clayPack.width,
+      clayPack.height
+    );
+
+    ctx.restore();
   }
 }

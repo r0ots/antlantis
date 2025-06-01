@@ -12,6 +12,19 @@ const simulationConfig: SimulationConfig = {
     min: 1, // Slowest ant
     max: 4, // Fastest ant
   },
+  castle: {
+    width: 120, // Castle width
+    height: 120, // Castle height
+  },
+  clayPacks: {
+    count: 4, // Number of clay packs to spawn
+    width: 60, // Clay pack width
+    height: 60, // Clay pack height
+  },
+  harvesting: {
+    harvestDistance: 40, // Distance at which ants can harvest clay packs
+    dropOffDistance: 50, // Distance at which ants can drop off at castle
+  },
 };
 
 const animationConfig: AnimationConfig = {
@@ -26,7 +39,9 @@ const game = new Game(
   "simulationCanvas",
   simulationConfig,
   animationConfig,
-  "assets/fourmi.png"
+  "assets/fourmi.png",
+  "assets/chateau.png",
+  "assets/grospackargile.png"
 );
 
 game.start().catch((error) => {
