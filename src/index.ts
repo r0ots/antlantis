@@ -1,18 +1,15 @@
 import Phaser from "phaser";
-import AntSimulationScene from "./scenes/AntSimulationScene";
-import {
-  DEFAULT_SIMULATION_CONFIG,
-  DEFAULT_ANIMATION_CONFIG,
-  GAME_CONFIG,
-} from "./config/GameConfig";
+import AntSimulationScene, { WORLD_CONFIG } from "./scenes/AntSimulationScene";
+import { DEFAULT_SIMULATION_CONFIG } from "./entities/AntManager";
+import { DEFAULT_ANIMATION_CONFIG } from "./systems/AnimationSystem";
 
 // Phaser game configuration
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: GAME_CONFIG.world.width,
-  height: GAME_CONFIG.world.height,
+  width: WORLD_CONFIG.width,
+  height: WORLD_CONFIG.height,
   parent: "game-container",
-  backgroundColor: GAME_CONFIG.world.backgroundColor,
+  backgroundColor: WORLD_CONFIG.backgroundColor,
   physics: {
     default: "arcade",
     arcade: {

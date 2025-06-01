@@ -1,16 +1,25 @@
 import Phaser from "phaser";
 import { SimulationConfig, AnimationConfig, CastleData } from "../types";
-import { AntManager } from "../entities/AntManager";
+import { AntManager, DEFAULT_SIMULATION_CONFIG } from "../entities/AntManager";
 import { ClayPackManager } from "../entities/ClayPackManager";
 import { BehaviorSystem } from "../systems/BehaviorSystem";
-import { AnimationSystem } from "../systems/AnimationSystem";
+import {
+  AnimationSystem,
+  DEFAULT_ANIMATION_CONFIG,
+} from "../systems/AnimationSystem";
 import { CollisionSystem } from "../systems/CollisionSystem";
 import { GameUI } from "../ui/GameUI";
-import {
-  DEFAULT_SIMULATION_CONFIG,
-  DEFAULT_ANIMATION_CONFIG,
-  GAME_CONFIG,
-} from "../config/GameConfig";
+
+export const WORLD_CONFIG = {
+  width: 1400,
+  height: 900,
+  backgroundColor: "#2d5016", // Forest green
+  minDistance: {
+    castleToClayPack: 120,
+    clayPackToClayPack: 100,
+    antSpawnRadius: 80,
+  },
+};
 
 export default class AntSimulationScene extends Phaser.Scene {
   // Game entities
