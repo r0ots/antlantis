@@ -1,34 +1,18 @@
 import Phaser from "phaser";
 import AntSimulationScene from "./scenes/AntSimulationScene";
-import { SimulationConfig, AnimationConfig } from "./types";
-
-// Game configuration
-const simulationConfig: SimulationConfig = {
-  numAnts: 10,
-  antSpeed: { min: 70, max: 130 },
-  antSize: { min: 20, max: 40 },
-  clayPackCount: 8,
-  clayPackSize: { width: 45, height: 45 },
-  castleSize: { width: 120, height: 120 },
-  harvesting: {
-    harvestDistance: 30,
-    dropOffDistance: 40,
-  },
-};
-
-const animationConfig: AnimationConfig = {
-  bobbleSpeed: 0.12,
-  rotationAmplitude: 0.06,
-  movementThreshold: 0.8,
-};
+import {
+  DEFAULT_SIMULATION_CONFIG,
+  DEFAULT_ANIMATION_CONFIG,
+  GAME_CONFIG,
+} from "./config/GameConfig";
 
 // Phaser game configuration
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 1400,
-  height: 900,
+  width: GAME_CONFIG.world.width,
+  height: GAME_CONFIG.world.height,
   parent: "game-container",
-  backgroundColor: "#2d5016", // Forest green background
+  backgroundColor: GAME_CONFIG.world.backgroundColor,
   physics: {
     default: "arcade",
     arcade: {
@@ -61,8 +45,8 @@ function startGame(): void {
   const scene = game.scene.getScene("AntSimulationScene") as AntSimulationScene;
 
   if (scene) {
-    scene.setConfig(simulationConfig);
-    scene.setAnimationConfig(animationConfig);
+    scene.setConfig(DEFAULT_SIMULATION_CONFIG);
+    scene.setAnimationConfig(DEFAULT_ANIMATION_CONFIG);
   }
 }
 
