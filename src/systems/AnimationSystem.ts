@@ -62,7 +62,7 @@ export class AnimationSystem {
       );
       if (
         currentHitPhase > antData.lastHitPhase &&
-        Math.sin(antData.harvestAnimationPhase * 4) > 0.8
+        Math.sin(antData.harvestAnimationPhase * 4) > 0.999
       ) {
         this.spawnHitEffect(ant, antData.harvestTarget);
         antData.lastHitPhase = currentHitPhase;
@@ -122,30 +122,58 @@ export class AnimationSystem {
     const midX = (ant.x + target.x) / 2;
     const midY = (ant.y + target.y) / 2;
 
-    // Add some randomness to the position
-    const offsetX = Phaser.Math.Between(-5, 5);
-    const offsetY = Phaser.Math.Between(-5, 5);
+    // Create multiple small sparks
+    const sparkCount = Phaser.Math.Between(3, 6);
 
-    // Create hit effect sprite
-    const hitEffect = this.scene.add.sprite(
-      midX + offsetX,
-      midY + offsetY,
-      "hit"
-    );
-    hitEffect.setScale(0.5); // Start small
-    hitEffect.setAlpha(1);
+    for (let i = 0; i < sparkCount; i++) {
+      // Add randomness to spawn position
+      const offsetX = Phaser.Math.Between(-8, 8);
+      const offsetY = Phaser.Math.Between(-8, 8);
 
-    // Animate the hit effect
-    this.scene.tweens.add({
-      targets: hitEffect,
-      scaleX: 1.2,
-      scaleY: 1.2,
-      alpha: 0,
-      duration: 300,
-      ease: "Power2",
-      onComplete: () => {
-        hitEffect.destroy();
-      },
-    });
+      // Create very tiny hit effect sprite
+      const spark = this.scene.add.sprite(
+        midX + offsetX,
+        midY + offsetY,
+        "hit"
+      );
+      spark.setScale(Phaser.Math.FloatBetween(0.02, 0.02)); // Even smaller
+      spark.setAlpha(0.9); // Start almost fully visible
+
+      // Random trajectory - more upward focused
+      const angle = Phaser.Math.FloatBetween(-Math.PI / 6, (-Math.PI * 5) / 6); // More upward angles (-30° to -150°)
+      const speed = Phaser.Math.FloatBetween(30, 60);
+      const gravity = Phaser.Math.FloatBetween(40, 60); // Reduced gravity for more upward motion
+
+      // Calculate end position for curved trajectory
+      const distance = Phaser.Math.FloatBetween(15, 30); // Shorter distance
+      const endX =
+        spark.x +
+        Math.cos(angle) * distance +
+        Phaser.Math.FloatBetween(-10, 10);
+      const endY = spark.y + Math.sin(angle) * distance + gravity * 0.1; // Less gravity effect
+
+      // Animate the spark with curved trajectory and fade out
+      this.scene.tweens.add({
+        targets: spark,
+        x: endX,
+        y: endY,
+        scaleX: 0.01, // Shrink to almost nothing
+        scaleY: 0.01,
+        alpha: 0, // Fade to completely transparent
+        duration: Phaser.Math.Between(300, 500), // Shorter duration
+        ease: "Quad.easeOut",
+        onComplete: () => {
+          spark.destroy();
+        },
+      });
+
+      // Add slight rotation for more dynamic look
+      this.scene.tweens.add({
+        targets: spark,
+        rotation: Phaser.Math.FloatBetween(-Math.PI, Math.PI),
+        duration: Phaser.Math.Between(300, 500),
+        ease: "Linear",
+      });
+    }
   }
 }
