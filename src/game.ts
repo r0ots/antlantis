@@ -6,14 +6,14 @@ import {
   ClayPack,
 } from "./types";
 import { CanvasManager } from "./canvas";
-import { AntRenderer, CastleRenderer, ClayPackRenderer } from "./drawing";
+import { AntRenderer, Renderer } from "./drawing";
 import { PhysicsEngine } from "./physics";
 
 export class Game {
   private canvasManager: CanvasManager;
   private antRenderer: AntRenderer;
-  private castleRenderer: CastleRenderer;
-  private clayPackRenderer: ClayPackRenderer;
+  private castleRenderer: Renderer;
+  private clayPackRenderer: Renderer;
   private physicsEngine: PhysicsEngine;
   private circles: Circle[] = [];
   private castle: Castle | null = null;
@@ -35,8 +35,8 @@ export class Game {
 
     this.canvasManager = new CanvasManager(canvasId);
     this.antRenderer = new AntRenderer(antImagePath, animationConfig);
-    this.castleRenderer = new CastleRenderer(castleImagePath);
-    this.clayPackRenderer = new ClayPackRenderer(clayPackImagePath);
+    this.castleRenderer = new Renderer(castleImagePath);
+    this.clayPackRenderer = new Renderer(clayPackImagePath);
     this.physicsEngine = new PhysicsEngine(config);
   }
 

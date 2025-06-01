@@ -1,6 +1,6 @@
 import { Circle, AnimationConfig, Castle, ClayPack } from "./types";
 
-abstract class BaseRenderer {
+export class Renderer {
   protected image: HTMLImageElement;
 
   constructor(imagePath: string) {
@@ -43,7 +43,7 @@ abstract class BaseRenderer {
   }
 }
 
-export class AntRenderer extends BaseRenderer {
+export class AntRenderer extends Renderer {
   constructor(imagePath: string, private animationConfig: AnimationConfig) {
     super(imagePath);
   }
@@ -73,6 +73,3 @@ export class AntRenderer extends BaseRenderer {
     });
   }
 }
-
-export class CastleRenderer extends BaseRenderer {}
-export class ClayPackRenderer extends BaseRenderer {}
