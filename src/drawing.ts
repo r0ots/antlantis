@@ -1,152 +1,78 @@
 import { Circle, AnimationConfig, Castle, ClayPack } from "./types";
 
-export class AntRenderer {
-  private antImage: HTMLImageElement;
-  private animationConfig: AnimationConfig;
+abstract class BaseRenderer {
+  protected image: HTMLImageElement;
 
-  constructor(imagePath: string, animationConfig: AnimationConfig) {
-    this.antImage = new Image();
-    this.antImage.src = imagePath;
-    this.animationConfig = animationConfig;
+  constructor(imagePath: string) {
+    this.image = new Image();
+    this.image.src = imagePath;
   }
 
-  public isImageLoaded(): boolean {
-    return this.antImage.complete && this.antImage.naturalHeight !== 0;
+  public isImageLoaded = () =>
+    this.image.complete && this.image.naturalHeight !== 0;
+  public onImageLoad = (callback: () => void) => (this.image.onload = callback);
+  public onImageError = (callback: () => void) =>
+    (this.image.onerror = callback);
+
+  protected withContext(
+    ctx: CanvasRenderingContext2D,
+    drawFn: () => void
+  ): void {
+    ctx.save();
+    drawFn();
+    ctx.restore();
   }
 
-  public onImageLoad(callback: () => void): void {
-    this.antImage.onload = callback;
+  protected drawImageCentered(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ): void {
+    ctx.drawImage(this.image, x - width / 2, y - height / 2, width, height);
   }
 
-  public onImageError(callback: () => void): void {
-    this.antImage.onerror = callback;
+  public draw(
+    ctx: CanvasRenderingContext2D,
+    obj: { x: number; y: number; width: number; height: number }
+  ): void {
+    this.withContext(ctx, () =>
+      this.drawImageCentered(ctx, obj.x, obj.y, obj.width, obj.height)
+    );
+  }
+}
+
+export class AntRenderer extends BaseRenderer {
+  constructor(imagePath: string, private animationConfig: AnimationConfig) {
+    super(imagePath);
   }
 
   public drawCircle(ctx: CanvasRenderingContext2D, circle: Circle): void {
-    ctx.save(); // Save the current state
+    this.withContext(ctx, () => {
+      const { bobbleSpeed, rotationAmplitude, movementThreshold } =
+        this.animationConfig;
+      const animationSpeedMultiplier = circle.speed / circle.maxSpeed;
+      const actualMovement =
+        Math.abs(circle.x - circle.prevX) + Math.abs(circle.y - circle.prevY);
 
-    const { bobbleSpeed, rotationAmplitude, movementThreshold } =
-      this.animationConfig;
+      let yOffset = 0,
+        angle = 0;
+      if (actualMovement > movementThreshold) {
+        const phase =
+          circle.animationPhase * bobbleSpeed * animationSpeedMultiplier;
+        yOffset = Math.sin(phase) * circle.radius * 0.1;
+        angle = Math.sin(phase * 0.5) * rotationAmplitude;
+      }
 
-    // Scale animation based on ant size
-    const bobbleAmplitude = circle.radius * 0.1; // Dynamic bobble amplitude based on size
-    const animationSpeedMultiplier = circle.speed / circle.maxSpeed; // Faster ants animate faster
+      ctx.translate(circle.x, circle.y + yOffset);
+      if (circle.facingRight) ctx.scale(-1, 1);
+      ctx.rotate(angle);
 
-    let yOffset = 0;
-    let angle = 0;
-
-    const actualDx = circle.x - circle.prevX;
-    const actualDy = circle.y - circle.prevY;
-
-    // Apply animation only if actual displacement is above threshold
-    if (
-      Math.abs(actualDx) > movementThreshold ||
-      Math.abs(actualDy) > movementThreshold
-    ) {
-      yOffset =
-        Math.sin(
-          circle.animationPhase * bobbleSpeed * animationSpeedMultiplier
-        ) * bobbleAmplitude;
-      angle =
-        Math.sin(
-          circle.animationPhase * bobbleSpeed * animationSpeedMultiplier * 0.5
-        ) * rotationAmplitude; // Slower rotation
-    }
-
-    ctx.translate(circle.x, circle.y + yOffset); // Move to the circle's position, add bobble
-
-    // Flip if facingRight is true
-    if (circle.facingRight) {
-      ctx.scale(-1, 1);
-    }
-
-    ctx.rotate(angle); // Apply wiggle rotation
-
-    // Draw the image using individual radius
-    const drawWidth = circle.radius * 2;
-    const drawHeight = circle.radius * 2;
-    ctx.drawImage(
-      this.antImage,
-      -drawWidth / 2,
-      -drawHeight / 2, // Center the image
-      drawWidth,
-      drawHeight
-    );
-
-    ctx.restore(); // Restore the original state
+      this.drawImageCentered(ctx, 0, 0, circle.radius * 2, circle.radius * 2);
+    });
   }
 }
 
-export class CastleRenderer {
-  private castleImage: HTMLImageElement;
-
-  constructor(imagePath: string) {
-    this.castleImage = new Image();
-    this.castleImage.src = imagePath;
-  }
-
-  public isImageLoaded(): boolean {
-    return this.castleImage.complete && this.castleImage.naturalHeight !== 0;
-  }
-
-  public onImageLoad(callback: () => void): void {
-    this.castleImage.onload = callback;
-  }
-
-  public onImageError(callback: () => void): void {
-    this.castleImage.onerror = callback;
-  }
-
-  public drawCastle(ctx: CanvasRenderingContext2D, castle: Castle): void {
-    ctx.save();
-
-    // Draw the castle image at the specified position and size
-    ctx.drawImage(
-      this.castleImage,
-      castle.x - castle.width / 2, // Center horizontally
-      castle.y - castle.height / 2, // Center vertically
-      castle.width,
-      castle.height
-    );
-
-    ctx.restore();
-  }
-}
-
-export class ClayPackRenderer {
-  private clayPackImage: HTMLImageElement;
-
-  constructor(imagePath: string) {
-    this.clayPackImage = new Image();
-    this.clayPackImage.src = imagePath;
-  }
-
-  public isImageLoaded(): boolean {
-    return (
-      this.clayPackImage.complete && this.clayPackImage.naturalHeight !== 0
-    );
-  }
-
-  public onImageLoad(callback: () => void): void {
-    this.clayPackImage.onload = callback;
-  }
-
-  public onImageError(callback: () => void): void {
-    this.clayPackImage.onerror = callback;
-  }
-
-  public drawClayPack(ctx: CanvasRenderingContext2D, clayPack: ClayPack): void {
-    ctx.save();
-
-    // Draw the clay pack image at the specified position and size
-    ctx.drawImage(
-      this.clayPackImage,
-      clayPack.x - clayPack.width / 2, // Center horizontally
-      clayPack.y - clayPack.height / 2, // Center vertically
-      clayPack.width,
-      clayPack.height
-    );
-
-    ctx.restore();
-  }
-}
+export class CastleRenderer extends BaseRenderer {}
+export class ClayPackRenderer extends BaseRenderer {}

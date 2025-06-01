@@ -156,12 +156,12 @@ export class Game {
 
     // Draw castle first (behind everything)
     if (this.castle) {
-      this.castleRenderer.drawCastle(ctx, this.castle);
+      this.castleRenderer.draw(ctx, this.castle);
     }
 
     // Draw clay packs
     this.clayPacks.forEach((clayPack) => {
-      this.clayPackRenderer.drawClayPack(ctx, clayPack);
+      this.clayPackRenderer.draw(ctx, clayPack);
     });
 
     // Draw ants on top
