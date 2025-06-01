@@ -11,36 +11,19 @@ export enum AntState {
   RETURNING_TO_CASTLE = "RETURNING_TO_CASTLE",
 }
 
-export interface StateTransition {
-  from: AntState;
-  to: AntState;
-  condition: (
-    ant: Phaser.GameObjects.Sprite,
-    context: AntStateContext
-  ) => boolean;
-}
-
 export interface AntStateContext {
   speed: number;
   animationPhase: number;
   previousX: number;
   previousY: number;
-
-  // Target management
   target: Phaser.GameObjects.Sprite | null;
   persistentTarget: Phaser.GameObjects.Sprite | null;
-
-  // Animation data
   harvestAnimationPhase: number;
   lastHitPhase: number;
   originalX?: number;
   originalY?: number;
-
-  // Timing data
   stateStartTime: number;
   lastHitTime?: number;
-
-  // Knockback data
   knockbackDistance?: number;
   knockbackDirection?: { x: number; y: number };
 }
@@ -71,9 +54,7 @@ export class SeekingState extends AntState_Base {
   }
 
   update(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
-    // Wander around or stay idle
-    const body = ant.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
+    (ant.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
   }
 
   exit(): void {}
@@ -131,18 +112,13 @@ export class AttackingState extends AntState_Base {
     context.originalX = ant.x;
     context.originalY = ant.y;
 
-    const body = ant.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
-
-    if (context.target) {
-      ant.setFlipX(context.target.x > ant.x);
-    }
+    (ant.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+    if (context.target) ant.setFlipX(context.target.x > ant.x);
   }
 
   update(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
     if (!context.target || !context.originalX || !context.originalY) return;
 
-    // Headbutt animation
     context.harvestAnimationPhase += 0.15;
 
     const headbuttCycle = Math.sin(context.harvestAnimationPhase * 2);
@@ -198,47 +174,27 @@ export class KnockbackState extends AntState_Base {
   }
 
   update(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
-    if (!context.knockbackDirection || !context.originalX || !context.originalY)
-      return;
+    if (!context.knockbackDirection || !context.knockbackDistance) return;
 
-    const elapsed = Date.now() - context.stateStartTime;
-    const duration = 300;
-    const progress = Math.min(elapsed / duration, 1);
+    const progress = (Date.now() - context.stateStartTime) / 300;
     const easedProgress = 1 - Math.pow(1 - progress, 3);
+    const currentDistance = context.knockbackDistance * easedProgress;
 
-    const finalX =
-      context.originalX +
-      context.knockbackDirection.x * context.knockbackDistance!;
-    const finalY =
-      context.originalY +
-      context.knockbackDirection.y * context.knockbackDistance!;
+    if (context.originalX && context.originalY) {
+      ant.x =
+        context.originalX + context.knockbackDirection.x * currentDistance;
+      ant.y =
+        context.originalY + context.knockbackDirection.y * currentDistance;
+    }
 
-    const currentX =
-      context.originalX + (finalX - context.originalX) * easedProgress;
-    const currentY =
-      context.originalY + (finalY - context.originalY) * easedProgress;
-
-    const body = ant.body as Phaser.Physics.Arcade.Body;
-    body.x = currentX - body.halfWidth;
-    body.y = currentY - body.halfHeight;
-
-    const rotationIntensity = (1 - easedProgress) * 0.4;
-    const knockbackRotation = rotationIntensity * (ant.flipX ? 1 : -1);
-    ant.setRotation(knockbackRotation);
-
-    context.previousX = ant.x;
-    context.previousY = ant.y;
+    const rotationEase = Math.sin(progress * Math.PI);
+    ant.setRotation(rotationEase * 0.8 * (ant.flipX ? 1 : -1));
   }
 
   exit(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
-    if (context.knockbackDirection && context.originalX && context.originalY) {
-      context.originalX =
-        context.originalX +
-        context.knockbackDirection.x * context.knockbackDistance!;
-      context.originalY =
-        context.originalY +
-        context.knockbackDirection.y * context.knockbackDistance!;
-    }
+    ant.setRotation(0);
+    context.originalX = ant.x;
+    context.originalY = ant.y;
   }
 }
 
@@ -249,25 +205,19 @@ export class StunnedState extends AntState_Base {
 
   enter(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
     context.stateStartTime = Date.now();
-    const body = ant.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
-    ant.setRotation(0);
+    ant.setTint(0x888888);
   }
 
   update(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
-    const body = ant.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
+    const stunProgress = (Date.now() - context.stateStartTime) / 1000;
+    const tintIntensity = 0.5 + 0.5 * Math.sin(stunProgress * Math.PI * 6);
+    const tintValue = Math.floor(0x88 + (0xff - 0x88) * tintIntensity);
+    ant.setTint((tintValue << 16) | (tintValue << 8) | tintValue);
 
-    if (context.originalX && context.originalY) {
-      body.x = context.originalX - body.halfWidth;
-      body.y = context.originalY - body.halfHeight;
-    }
-
-    const stunTremble = Math.sin(Date.now() * 0.02) * 0.5;
-    ant.y += stunTremble;
-
-    context.previousX = ant.x;
-    context.previousY = ant.y;
+    const wobbleX = Math.sin(Date.now() / 100) * 2;
+    const wobbleY = Math.cos(Date.now() / 100) * 1;
+    ant.x = context.originalX! + wobbleX;
+    ant.y = context.originalY! + wobbleY;
   }
 
   exit(): void {}
@@ -280,12 +230,11 @@ export class CooldownState extends AntState_Base {
 
   enter(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
     context.stateStartTime = Date.now();
-    ant.setRotation(0);
+    ant.clearTint();
   }
 
   update(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
-    context.previousX = ant.x;
-    context.previousY = ant.y;
+    (ant.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
   }
 
   exit(): void {}
@@ -298,13 +247,10 @@ export class CarryingState extends AntState_Base {
 
   enter(ant: Phaser.GameObjects.Sprite, context: AntStateContext): void {
     context.stateStartTime = Date.now();
-    context.persistentTarget = null;
-    ant.setTint(0xffd700); // Gold tint for carrying
+    ant.setTint(0x8b4513);
   }
 
-  update(): void {
-    // Movement handled by MovingToTarget when combined
-  }
+  update(): void {}
 
   exit(ant: Phaser.GameObjects.Sprite): void {
     ant.clearTint();
@@ -320,9 +266,7 @@ export class ReturningToCastleState extends AntState_Base {
     context.stateStartTime = Date.now();
   }
 
-  update(): void {
-    // Movement handled by MovingToTarget when combined
-  }
+  update(): void {}
 
   exit(): void {}
 }

@@ -12,7 +12,7 @@ export class BehaviorSystem {
     clayPackManager: ClayPackManager,
     castle: Phaser.GameObjects.Sprite,
     scene: Phaser.Scene,
-    damagePerHit: number = 5,
+    damagePerHit = 5,
     castleData?: CastleData
   ) {
     this.stateMachine = new AntStateMachineManager(
@@ -25,8 +25,7 @@ export class BehaviorSystem {
 
     // Register all existing ants with the state machine
     this.antManager.getAnts().forEach((ant) => {
-      const speed = this.antManager.getAntSpeed(ant);
-      this.stateMachine.registerAnt(ant, speed);
+      this.stateMachine.registerAnt(ant, this.antManager.getAntSpeed(ant));
     });
   }
 

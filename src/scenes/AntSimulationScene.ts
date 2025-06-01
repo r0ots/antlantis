@@ -18,28 +18,23 @@ export const WORLD_CONFIG = {
 };
 
 export default class AntSimulationScene extends Phaser.Scene {
-  // Game entities
   private castle!: Phaser.GameObjects.Sprite;
   private castleData: CastleData = { clayInventory: 0 };
 
-  // Managers
   private antManager!: AntManager;
   private clayPackManager!: ClayPackManager;
 
-  // Systems
   private behaviorSystem!: BehaviorSystem;
   private collisionSystem!: CollisionSystem;
   private gameUI!: GameUI;
 
-  // Configuration
   private simulationConfig: SimulationConfig = DEFAULT_SIMULATION_CONFIG;
 
   constructor() {
     super({ key: "AntSimulationScene" });
   }
 
-  // Allow external configuration
-  public setConfig(config: Partial<SimulationConfig>): void {
+  setConfig(config: Partial<SimulationConfig>): void {
     this.simulationConfig = { ...this.simulationConfig, ...config };
   }
 
@@ -83,7 +78,6 @@ export default class AntSimulationScene extends Phaser.Scene {
   }
 
   private initializeSystems(): void {
-    // BehaviorSystem now includes the state machine and handles all ant behavior/animation
     this.behaviorSystem = new BehaviorSystem(
       this.antManager,
       this.clayPackManager,
@@ -102,7 +96,6 @@ export default class AntSimulationScene extends Phaser.Scene {
     );
 
     this.gameUI = new GameUI(this, this.antManager, this.clayPackManager);
-    // Set the behavior system reference so UI can display state information
     this.gameUI.setBehaviorSystem(this.behaviorSystem);
   }
 
@@ -110,7 +103,6 @@ export default class AntSimulationScene extends Phaser.Scene {
     const ants = this.antManager.getAnts();
     const clayPacks = this.clayPackManager.getClayPacks();
 
-    // Overlap detection for harvesting and delivery
     this.physics.add.overlap(
       ants,
       clayPacks,
@@ -125,8 +117,6 @@ export default class AntSimulationScene extends Phaser.Scene {
       undefined,
       this
     );
-
-    // Collision detection for realistic movement
     this.physics.add.collider(
       ants,
       ants,
@@ -149,28 +139,22 @@ export default class AntSimulationScene extends Phaser.Scene {
   update(): void {
     const ants = this.antManager.getAnts();
 
-    // BehaviorSystem now handles both behavior and animation via state machine
     ants.forEach((ant) => {
       this.behaviorSystem.updateAntBehavior(ant);
     });
 
-    // Update collision system to handle harvest completion
     this.collisionSystem.update();
-
     this.updateUI();
   }
 
   resize(gameSize: { width: number; height: number }): void {
-    // Update world config
     WORLD_CONFIG.width = gameSize.width;
     WORLD_CONFIG.height = gameSize.height;
 
-    // Reposition castle to center of new dimensions
     if (this.castle) {
       this.castle.setPosition(gameSize.width / 2, gameSize.height / 2);
     }
 
-    // Update UI positioning if needed
     if (this.gameUI) {
       this.gameUI.resize(gameSize);
     }

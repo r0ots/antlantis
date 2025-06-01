@@ -11,9 +11,7 @@ export class ClayPackManager {
     private castle: Phaser.GameObjects.Sprite
   ) {}
 
-  public createClayPacks(
-    config: SimulationConfig
-  ): Phaser.GameObjects.Sprite[] {
+  createClayPacks(config: SimulationConfig): Phaser.GameObjects.Sprite[] {
     const { clayPackCount, clayPackSize, harvesting } = config;
 
     for (let i = 0; i < clayPackCount; i++) {
@@ -41,26 +39,21 @@ export class ClayPackManager {
     return this.clayPacks;
   }
 
-  public getClayPacks(): Phaser.GameObjects.Sprite[] {
+  getClayPacks() {
     return this.clayPacks;
   }
 
-  public getClayPackData(
-    clayPack: Phaser.GameObjects.Sprite
-  ): ClayPackData | undefined {
+  getClayPackData(clayPack: Phaser.GameObjects.Sprite) {
     return this.clayPackData.get(clayPack);
   }
 
-  public damageClayPack(
-    clayPack: Phaser.GameObjects.Sprite,
-    damage: number
-  ): boolean {
+  damageClayPack(clayPack: Phaser.GameObjects.Sprite, damage: number): boolean {
     const clayData = this.clayPackData.get(clayPack);
     if (!clayData) return false;
 
     clayData.hitPoints = Math.max(0, clayData.hitPoints - damage);
-
     const healthPercentage = clayData.hitPoints / clayData.maxHitPoints;
+
     clayPack.setAlpha(0.3 + healthPercentage * 0.7);
     clayPack.setTint(
       0xffffff * healthPercentage + 0x666666 * (1 - healthPercentage)
@@ -69,7 +62,7 @@ export class ClayPackManager {
     return clayData.hitPoints <= 0;
   }
 
-  public removeClayPack(clayPack: Phaser.GameObjects.Sprite): void {
+  removeClayPack(clayPack: Phaser.GameObjects.Sprite): void {
     if (!clayPack) return;
 
     this.clayPackData.delete(clayPack);
@@ -77,7 +70,7 @@ export class ClayPackManager {
     this.clayPacks = this.clayPacks.filter((pack) => pack !== clayPack);
   }
 
-  public findNearestClayPack(
+  findNearestClayPack(
     ant: Phaser.GameObjects.Sprite
   ): Phaser.GameObjects.Sprite | null {
     if (this.clayPacks.length === 0) return null;
@@ -99,10 +92,7 @@ export class ClayPackManager {
     });
   }
 
-  private findValidPosition(
-    width: number,
-    height: number
-  ): { x: number; y: number } {
+  private findValidPosition(width: number, height: number) {
     const margin = Math.max(width, height) / 2 + 20;
     const { width: sceneWidth, height: sceneHeight } = this.scene.scale;
 

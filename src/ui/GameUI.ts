@@ -5,7 +5,7 @@ import { ClayPackManager } from "../entities/ClayPackManager";
 import { BehaviorSystem } from "../systems/BehaviorSystem";
 import { AntState } from "../systems/AntStateMachine";
 
-export const UI_CONFIG = {
+const UI_CONFIG = {
   debugTextStyle: {
     fontSize: "14px",
     color: "#ffffff",
@@ -26,7 +26,7 @@ export class GameUI {
     private behaviorSystem?: BehaviorSystem
   ) {}
 
-  public create(): void {
+  create(): void {
     this.debugText = this.scene.add.text(
       UI_CONFIG.position.x,
       UI_CONFIG.position.y,
@@ -36,22 +36,18 @@ export class GameUI {
     this.debugText.setDepth(UI_CONFIG.depth);
   }
 
-  public setBehaviorSystem(behaviorSystem: BehaviorSystem): void {
+  setBehaviorSystem(behaviorSystem: BehaviorSystem): void {
     this.behaviorSystem = behaviorSystem;
   }
 
-  public updateDebugText(castleData: CastleData): void {
+  updateDebugText(castleData: CastleData): void {
     const ants = this.antManager.getAnts();
     const clayPacks = this.clayPackManager.getClayPacks();
 
     const antStates = ants.map((ant, i) => {
-      if (this.behaviorSystem) {
-        const state = this.behaviorSystem.getCurrentState(ant);
-        const stateDisplay = this.getStateDisplay(state);
-        return `Ant ${i + 1}: ${stateDisplay}`;
-      } else {
-        return `Ant ${i + 1}: ⚙️ Loading...`;
-      }
+      const state = this.behaviorSystem?.getCurrentState(ant);
+      const stateDisplay = this.getStateDisplay(state);
+      return `Ant ${i + 1}: ${stateDisplay}`;
     });
 
     const progress =
@@ -68,31 +64,20 @@ export class GameUI {
   }
 
   private getStateDisplay(state?: AntState): string {
-    switch (state) {
-      case AntState.SEEKING:
-        return "🔍 Seeking";
-      case AntState.MOVING_TO_TARGET:
-        return "🚶 Moving";
-      case AntState.ATTACKING:
-        return "⚡ Attacking";
-      case AntState.KNOCKBACK:
-        return "💥 Knockback";
-      case AntState.STUNNED:
-        return "😵 Stunned";
-      case AntState.COOLDOWN:
-        return "⏳ Cooldown";
-      case AntState.CARRYING:
-        return "🏗️ Carrying";
-      case AntState.RETURNING_TO_CASTLE:
-        return "🏰 Returning";
-      default:
-        return "❓ Unknown";
-    }
+    const stateMap = {
+      [AntState.SEEKING]: "🔍 Seeking",
+      [AntState.MOVING_TO_TARGET]: "🚶 Moving",
+      [AntState.ATTACKING]: "⚡ Attacking",
+      [AntState.KNOCKBACK]: "💥 Knockback",
+      [AntState.STUNNED]: "😵 Stunned",
+      [AntState.COOLDOWN]: "⏳ Cooldown",
+      [AntState.CARRYING]: "🏗️ Carrying",
+      [AntState.RETURNING_TO_CASTLE]: "🏰 Returning",
+    };
+    return stateMap[state!] || "❓ Unknown";
   }
 
-  public resize(gameSize: { width: number; height: number }): void {
-    // UI elements are positioned relative to top-left, so they don't need repositioning
-    // The debug text stays in the same position regardless of screen size
-    // This method is here for future UI elements that might need repositioning
+  resize(gameSize: { width: number; height: number }): void {
+    // UI elements positioned relative to top-left don't need repositioning
   }
 }

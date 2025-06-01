@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { SimulationConfig } from "../types";
-import { PHYSICS_CONFIG, VISUAL_CONFIG } from "../systems/CollisionSystem";
+import { PHYSICS_CONFIG } from "../systems/CollisionSystem";
 import { WORLD_CONFIG } from "../scenes/AntSimulationScene";
 
 export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
@@ -19,18 +19,13 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   },
 };
 
-// Simplified data structure - state management now handled by state machine
-interface SimpleAntData {
-  speed: number;
-}
-
 export class AntManager {
   private ants: Phaser.GameObjects.Sprite[] = [];
-  private antData = new Map<Phaser.GameObjects.Sprite, SimpleAntData>();
+  private antData = new Map<Phaser.GameObjects.Sprite, { speed: number }>();
 
   constructor(private scene: Phaser.Scene) {}
 
-  public createAnts(config: SimulationConfig): Phaser.GameObjects.Sprite[] {
+  createAnts(config: SimulationConfig): Phaser.GameObjects.Sprite[] {
     const { numAnts, antSize, antSpeed } = config;
 
     for (let i = 0; i < numAnts; i++) {
@@ -50,15 +45,15 @@ export class AntManager {
     return this.ants;
   }
 
-  public getAnts(): Phaser.GameObjects.Sprite[] {
+  getAnts() {
     return this.ants;
   }
 
-  public getAntSpeed(ant: Phaser.GameObjects.Sprite): number {
+  getAntSpeed(ant: Phaser.GameObjects.Sprite) {
     return this.antData.get(ant)?.speed || 100;
   }
 
-  private findValidSpawnPosition(maxSize: number): { x: number; y: number } {
+  private findValidSpawnPosition(maxSize: number) {
     const margin = maxSize / 2 + 20;
     const { width, height } = this.scene.scale;
     const centerX = width / 2;
@@ -68,13 +63,10 @@ export class AntManager {
       const x = Phaser.Math.Between(margin, width - margin);
       const y = Phaser.Math.Between(margin, height - margin);
 
-      const distanceFromCenter = Phaser.Math.Distance.Between(
-        x,
-        y,
-        centerX,
-        centerY
-      );
-      if (distanceFromCenter > WORLD_CONFIG.minDistance.antSpawnRadius) {
+      if (
+        Phaser.Math.Distance.Between(x, y, centerX, centerY) >
+        WORLD_CONFIG.minDistance.antSpawnRadius
+      ) {
         return { x, y };
       }
     }

@@ -5,14 +5,8 @@ export interface SimulationConfig {
   antSpeed: number;
   antSize: number;
   clayPackCount: number;
-  clayPackSize: {
-    width: number;
-    height: number;
-  };
-  castleSize: {
-    width: number;
-    height: number;
-  };
+  clayPackSize: { width: number; height: number };
+  castleSize: { width: number; height: number };
   harvesting: {
     harvestDistance: number;
     dropOffDistance: number;

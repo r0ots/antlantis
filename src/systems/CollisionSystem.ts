@@ -22,19 +22,15 @@ export class CollisionSystem {
     private config: SimulationConfig
   ) {}
 
-  // Simplified collision handlers - state machine handles the complex logic
-  public handleAntClayPackOverlap = (ant: any, clayPack: any): void => {
-    // Basic overlap detection is still useful for physics
-    // But state machine handles harvesting logic
+  handleAntClayPackOverlap = (ant: any, clayPack: any): void => {
+    // Basic overlap detection - state machine handles harvesting logic
   };
 
-  public handleAntCastleOverlap = (ant: any, castle: any): void => {
+  handleAntCastleOverlap = (ant: any, castle: any): void => {
     // State machine handles clay delivery logic
-    // This could be used for additional effects or validation
   };
 
-  public handleAntCollision = (ant1: any, ant2: any): void => {
-    // Add slight randomness to prevent ants getting stuck together
+  handleAntCollision = (ant1: any, ant2: any): void => {
     const ant1Body = (ant1 as Phaser.GameObjects.Sprite)
       .body as Phaser.Physics.Arcade.Body;
     const ant2Body = (ant2 as Phaser.GameObjects.Sprite)
@@ -47,11 +43,11 @@ export class CollisionSystem {
     ant2Body.velocity.y += Phaser.Math.Between(-randomness, randomness);
   };
 
-  public getCastleData(): CastleData {
+  getCastleData() {
     return this.castleData;
   }
 
-  public update(): void {
+  update(): void {
     // State machine handles all the complex update logic now
   }
 }

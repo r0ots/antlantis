@@ -24,7 +24,7 @@ export class AntStateMachineManager {
     private clayPackManager: ClayPackManager,
     private castle: Phaser.GameObjects.Sprite,
     private scene: Phaser.Scene,
-    private damagePerHit: number = 5,
+    private damagePerHit = 5,
     private castleData?: CastleData
   ) {
     this.initializeStates();
@@ -41,7 +41,7 @@ export class AntStateMachineManager {
     this.states.set(AntState.RETURNING_TO_CASTLE, new ReturningToCastleState());
   }
 
-  public registerAnt(ant: Phaser.GameObjects.Sprite, speed: number): void {
+  registerAnt(ant: Phaser.GameObjects.Sprite, speed: number): void {
     const context: AntStateContext = {
       speed,
       animationPhase: Math.random() * Math.PI * 2,
@@ -58,26 +58,23 @@ export class AntStateMachineManager {
     this.transitionTo(ant, AntState.SEEKING);
   }
 
-  public updateAnt(ant: Phaser.GameObjects.Sprite, deltaTime: number): void {
+  updateAnt(ant: Phaser.GameObjects.Sprite, deltaTime: number): void {
     const currentState = this.antStates.get(ant);
     const context = this.antContexts.get(ant);
 
     if (!currentState || !context) return;
 
-    // Check for state transitions
     this.checkTransitions(ant, currentState, context);
 
-    // Update current state
     const stateHandler = this.states.get(currentState);
-    if (stateHandler) {
-      stateHandler.update(ant, context, deltaTime);
-    }
+    stateHandler?.update(ant, context, deltaTime);
 
-    // Handle normal movement animation for moving states
     if (
-      currentState === AntState.MOVING_TO_TARGET ||
-      currentState === AntState.SEEKING ||
-      currentState === AntState.RETURNING_TO_CASTLE
+      [
+        AntState.MOVING_TO_TARGET,
+        AntState.SEEKING,
+        AntState.RETURNING_TO_CASTLE,
+      ].includes(currentState)
     ) {
       this.updateMovementAnimation(ant, context);
     }
@@ -93,7 +90,6 @@ export class AntStateMachineManager {
 
     switch (currentState) {
       case AntState.SEEKING:
-        // Look for clay packs if not carrying
         if (!context.target) {
           const nearestClayPack = this.clayPackManager.findNearestClayPack(ant);
           if (nearestClayPack) {
@@ -119,12 +115,9 @@ export class AntStateMachineManager {
           context.target.y
         );
 
-        // If close enough to clay pack, start attacking
         if (distance <= 50 && context.target !== this.castle) {
           this.transitionTo(ant, AntState.ATTACKING);
-        }
-        // If reached castle while carrying, drop off clay
-        else if (distance <= 100 && context.target === this.castle) {
+        } else if (distance <= 100 && context.target === this.castle) {
           this.dropOffClay(ant, context);
           this.transitionTo(ant, AntState.SEEKING);
         }
@@ -136,7 +129,6 @@ export class AntStateMachineManager {
           return;
         }
 
-        // Check for hit at peak of animation
         const headbuttCycle = Math.sin(context.harvestAnimationPhase * 2);
         const currentHitPhase = Math.floor(
           (context.harvestAnimationPhase * 2) / (Math.PI * 2)
@@ -151,36 +143,32 @@ export class AntStateMachineManager {
         break;
 
       case AntState.KNOCKBACK:
-        if (timeSinceStateStart >= 300) {
+        if (timeSinceStateStart >= 300)
           this.transitionTo(ant, AntState.STUNNED);
-        }
         break;
 
       case AntState.STUNNED:
-        if (timeSinceStateStart >= 1000) {
+        if (timeSinceStateStart >= 1000)
           this.transitionTo(ant, AntState.COOLDOWN);
-        }
         break;
 
       case AntState.COOLDOWN:
         if (timeSinceStateStart >= 1000) {
-          // Check if target still exists
-          if (context.target?.active) {
-            this.transitionTo(ant, AntState.MOVING_TO_TARGET);
-          } else {
-            this.transitionTo(ant, AntState.SEEKING);
-          }
+          this.transitionTo(
+            ant,
+            context.target?.active
+              ? AntState.MOVING_TO_TARGET
+              : AntState.SEEKING
+          );
         }
         break;
 
       case AntState.CARRYING:
-        // Automatically transition to returning to castle
         context.target = this.castle;
         this.transitionTo(ant, AntState.RETURNING_TO_CASTLE);
         break;
 
       case AntState.RETURNING_TO_CASTLE:
-        // This state behaves like MOVING_TO_TARGET but specifically for the castle
         const castleDistance = Phaser.Math.Distance.Between(
           ant.x,
           ant.y,
@@ -204,20 +192,12 @@ export class AntStateMachineManager {
 
     if (!context) return;
 
-    // Exit current state
     if (currentState) {
-      const currentStateHandler = this.states.get(currentState);
-      currentStateHandler?.exit(ant, context);
+      this.states.get(currentState)?.exit(ant, context);
     }
 
-    // Enter new state
     this.antStates.set(ant, newState);
-    const newStateHandler = this.states.get(newState);
-    newStateHandler?.enter(ant, context);
-
-    console.log(
-      `Ant transitioned from ${currentState || "NONE"} to ${newState}`
-    );
+    this.states.get(newState)?.enter(ant, context);
   }
 
   private performHit(
@@ -226,17 +206,14 @@ export class AntStateMachineManager {
   ): void {
     if (!context.target) return;
 
-    // Spawn hit effect
     this.spawnHitEffect(ant, context.target);
 
-    // Damage the clay pack
     const isDestroyed = this.clayPackManager.damageClayPack(
       context.target,
       this.damagePerHit
     );
 
     if (isDestroyed) {
-      // Clay pack destroyed, ant starts carrying
       this.clayPackManager.removeClayPack(context.target);
       context.persistentTarget = null;
       this.transitionTo(ant, AntState.CARRYING);
@@ -247,17 +224,13 @@ export class AntStateMachineManager {
     ant: Phaser.GameObjects.Sprite,
     context: AntStateContext
   ): void {
-    // Clear carrying state
     ant.clearTint();
     context.target = null;
     context.persistentTarget = null;
 
-    // Increment castle inventory if available
     if (this.castleData) {
       this.castleData.clayInventory++;
     }
-
-    console.log("Clay delivered to castle!");
   }
 
   private updateMovementAnimation(
@@ -336,13 +309,11 @@ export class AntStateMachineManager {
     }
   }
 
-  public getCurrentState(ant: Phaser.GameObjects.Sprite): AntState | undefined {
+  getCurrentState(ant: Phaser.GameObjects.Sprite) {
     return this.antStates.get(ant);
   }
 
-  public getContext(
-    ant: Phaser.GameObjects.Sprite
-  ): AntStateContext | undefined {
+  getContext(ant: Phaser.GameObjects.Sprite) {
     return this.antContexts.get(ant);
   }
 }
