@@ -31,16 +31,17 @@ export class AnimationSystem {
     if (isMoving) {
       this.antManager.updateAnimationPhase(
         ant,
-        this.animationConfig.bobbleSpeed
+        this.animationConfig.bobbleSpeed * 0.3 // Slower hopping
       );
 
-      // Bobbing and wiggle animation
-      const bobble = Math.sin(antData.animationPhase) * 1.5;
+      // Hopping animation - creates small discrete jumps
+      const hopCycle = Math.sin(antData.animationPhase);
+      const hop = hopCycle > 0 ? Math.pow(hopCycle, 2) * 2.3 : 0; // Slightly bigger hops
       const wiggle =
         Math.sin(antData.animationPhase * 0.7) *
         this.animationConfig.rotationAmplitude;
 
-      ant.y += bobble * 0.1;
+      ant.y += hop * -0.8; // Negative to hop upward
       ant.setRotation(wiggle);
     } else {
       // Gradually return to neutral position when not moving
