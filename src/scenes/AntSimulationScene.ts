@@ -1,12 +1,8 @@
 import Phaser from "phaser";
-import { SimulationConfig, AnimationConfig, CastleData } from "../types";
+import { SimulationConfig, CastleData } from "../types";
 import { AntManager, DEFAULT_SIMULATION_CONFIG } from "../entities/AntManager";
 import { ClayPackManager } from "../entities/ClayPackManager";
 import { BehaviorSystem } from "../systems/BehaviorSystem";
-import {
-  AnimationSystem,
-  DEFAULT_ANIMATION_CONFIG,
-} from "../systems/AnimationSystem";
 import { CollisionSystem } from "../systems/CollisionSystem";
 import { GameUI } from "../ui/GameUI";
 
@@ -32,13 +28,11 @@ export default class AntSimulationScene extends Phaser.Scene {
 
   // Systems
   private behaviorSystem!: BehaviorSystem;
-  private animationSystem!: AnimationSystem;
   private collisionSystem!: CollisionSystem;
   private gameUI!: GameUI;
 
   // Configuration
   private simulationConfig: SimulationConfig = DEFAULT_SIMULATION_CONFIG;
-  private animationConfig: AnimationConfig = DEFAULT_ANIMATION_CONFIG;
 
   constructor() {
     super({ key: "AntSimulationScene" });
@@ -47,10 +41,6 @@ export default class AntSimulationScene extends Phaser.Scene {
   // Allow external configuration
   public setConfig(config: Partial<SimulationConfig>): void {
     this.simulationConfig = { ...this.simulationConfig, ...config };
-  }
-
-  public setAnimationConfig(config: Partial<AnimationConfig>): void {
-    this.animationConfig = { ...this.animationConfig, ...config };
   }
 
   preload(): void {
@@ -63,8 +53,8 @@ export default class AntSimulationScene extends Phaser.Scene {
   create(): void {
     this.createCastle();
     this.initializeManagers();
-    this.initializeSystems();
     this.createEntities();
+    this.initializeSystems();
     this.setupPhysics();
     this.createUI();
     this.updateUI();
@@ -87,19 +77,22 @@ export default class AntSimulationScene extends Phaser.Scene {
     this.clayPackManager = new ClayPackManager(this, this.castle);
   }
 
+  private createEntities(): void {
+    this.clayPackManager.createClayPacks(this.simulationConfig);
+    this.antManager.createAnts(this.simulationConfig);
+  }
+
   private initializeSystems(): void {
+    // BehaviorSystem now includes the state machine and handles all ant behavior/animation
     this.behaviorSystem = new BehaviorSystem(
       this.antManager,
       this.clayPackManager,
-      this.castle
-    );
-    this.animationSystem = new AnimationSystem(
-      this.antManager,
-      this.clayPackManager,
-      this.animationConfig,
+      this.castle,
       this,
-      this.simulationConfig.harvesting.damagePerHit
+      this.simulationConfig.harvesting.damagePerHit,
+      this.castleData
     );
+
     this.collisionSystem = new CollisionSystem(
       this.antManager,
       this.clayPackManager,
@@ -107,12 +100,10 @@ export default class AntSimulationScene extends Phaser.Scene {
       this.castleData,
       this.simulationConfig
     );
-    this.gameUI = new GameUI(this, this.antManager, this.clayPackManager);
-  }
 
-  private createEntities(): void {
-    this.clayPackManager.createClayPacks(this.simulationConfig);
-    this.antManager.createAnts(this.simulationConfig);
+    this.gameUI = new GameUI(this, this.antManager, this.clayPackManager);
+    // Set the behavior system reference so UI can display state information
+    this.gameUI.setBehaviorSystem(this.behaviorSystem);
   }
 
   private setupPhysics(): void {
@@ -158,9 +149,9 @@ export default class AntSimulationScene extends Phaser.Scene {
   update(): void {
     const ants = this.antManager.getAnts();
 
+    // BehaviorSystem now handles both behavior and animation via state machine
     ants.forEach((ant) => {
       this.behaviorSystem.updateAntBehavior(ant);
-      this.animationSystem.updateAntAnimation(ant);
     });
 
     // Update collision system to handle harvest completion

@@ -4,15 +4,12 @@ import { WORLD_CONFIG } from "../scenes/AntSimulationScene";
 
 export class ClayPackManager {
   private clayPacks: Phaser.GameObjects.Sprite[] = [];
-  private clayPackData: Map<Phaser.GameObjects.Sprite, ClayPackData> =
-    new Map();
-  private scene: Phaser.Scene;
-  private castle: Phaser.GameObjects.Sprite;
+  private clayPackData = new Map<Phaser.GameObjects.Sprite, ClayPackData>();
 
-  constructor(scene: Phaser.Scene, castle: Phaser.GameObjects.Sprite) {
-    this.scene = scene;
-    this.castle = castle;
-  }
+  constructor(
+    private scene: Phaser.Scene,
+    private castle: Phaser.GameObjects.Sprite
+  ) {}
 
   public createClayPacks(
     config: SimulationConfig
@@ -24,23 +21,19 @@ export class ClayPackManager {
         clayPackSize.width,
         clayPackSize.height
       );
-
       const clayPack = this.scene.physics.add.sprite(
         position.x,
         position.y,
         "clayPack"
       );
+
       clayPack.setDisplaySize(clayPackSize.width, clayPackSize.height);
+      (clayPack.body as Phaser.Physics.Arcade.Body).setImmovable(true);
 
-      const body = clayPack.body as Phaser.Physics.Arcade.Body;
-      body.setImmovable(true);
-
-      // Initialize hit points for this clay pack
-      const clayData: ClayPackData = {
+      this.clayPackData.set(clayPack, {
         hitPoints: harvesting.clayPackMaxHitPoints,
         maxHitPoints: harvesting.clayPackMaxHitPoints,
-      };
-      this.clayPackData.set(clayPack, clayData);
+      });
 
       this.clayPacks.push(clayPack);
     }
@@ -67,21 +60,17 @@ export class ClayPackManager {
 
     clayData.hitPoints = Math.max(0, clayData.hitPoints - damage);
 
-    // Update visual to show damage (make it more transparent/darker as it takes damage)
     const healthPercentage = clayData.hitPoints / clayData.maxHitPoints;
-    clayPack.setAlpha(0.3 + healthPercentage * 0.7); // Alpha from 0.3 to 1.0
+    clayPack.setAlpha(0.3 + healthPercentage * 0.7);
     clayPack.setTint(
       0xffffff * healthPercentage + 0x666666 * (1 - healthPercentage)
-    ); // Darker as damaged
+    );
 
     return clayData.hitPoints <= 0;
   }
 
   public removeClayPack(clayPack: Phaser.GameObjects.Sprite): void {
-    // Add null check for defensive programming
-    if (!clayPack) {
-      return;
-    }
+    if (!clayPack) return;
 
     this.clayPackData.delete(clayPack);
     clayPack.destroy();
@@ -115,12 +104,12 @@ export class ClayPackManager {
     height: number
   ): { x: number; y: number } {
     const margin = Math.max(width, height) / 2 + 20;
+    const { width: sceneWidth, height: sceneHeight } = this.scene.scale;
 
     for (let attempts = 0; attempts < 100; attempts++) {
-      const x = Phaser.Math.Between(margin, this.scene.scale.width - margin);
-      const y = Phaser.Math.Between(margin, this.scene.scale.height - margin);
+      const x = Phaser.Math.Between(margin, sceneWidth - margin);
+      const y = Phaser.Math.Between(margin, sceneHeight - margin);
 
-      // Check distance from castle
       const distanceToCastle = Phaser.Math.Distance.Between(
         x,
         y,
@@ -130,22 +119,18 @@ export class ClayPackManager {
       if (distanceToCastle < WORLD_CONFIG.minDistance.castleToClayPack)
         continue;
 
-      // Check distance from existing clay packs
       const tooCloseToOthers = this.clayPacks.some(
         (pack) =>
           Phaser.Math.Distance.Between(x, y, pack.x, pack.y) <
           WORLD_CONFIG.minDistance.clayPackToClayPack
       );
 
-      if (!tooCloseToOthers) {
-        return { x, y };
-      }
+      if (!tooCloseToOthers) return { x, y };
     }
 
-    // Fallback position
     return {
-      x: Phaser.Math.Between(margin, this.scene.scale.width - margin),
-      y: Phaser.Math.Between(margin, this.scene.scale.height - margin),
+      x: Phaser.Math.Between(margin, sceneWidth - margin),
+      y: Phaser.Math.Between(margin, sceneHeight - margin),
     };
   }
 }

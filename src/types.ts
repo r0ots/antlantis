@@ -31,28 +31,6 @@ export interface AnimationConfig {
 }
 
 // Runtime data types
-export interface AntData {
-  isCarrying: boolean;
-  speed: number;
-  animationPhase: number;
-  previousX: number;
-  previousY: number;
-  isHarvesting: boolean;
-  harvestStartTime: number;
-  harvestTarget: Phaser.GameObjects.Sprite | null;
-  harvestAnimationPhase: number;
-  lastHitPhase: number;
-  originalHarvestX?: number;
-  originalHarvestY?: number;
-  lastHitTime?: number;
-  isInCooldown?: boolean;
-  knockbackStartTime?: number;
-  knockbackDistance?: number;
-  stunStartTime?: number;
-  isStunned?: boolean;
-  persistentTarget?: Phaser.GameObjects.Sprite | null;
-}
-
 export interface CastleData {
   clayInventory: number;
 }

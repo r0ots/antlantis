@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import AntSimulationScene, { WORLD_CONFIG } from "./scenes/AntSimulationScene";
 import { DEFAULT_SIMULATION_CONFIG } from "./entities/AntManager";
-import { DEFAULT_ANIMATION_CONFIG } from "./systems/AnimationSystem";
 
 // Phaser game configuration
 const config: Phaser.Types.Core.GameConfig = {
@@ -43,7 +42,6 @@ function startGame(): void {
 
   if (scene) {
     scene.setConfig(DEFAULT_SIMULATION_CONFIG);
-    scene.setAnimationConfig(DEFAULT_ANIMATION_CONFIG);
   }
 }
 

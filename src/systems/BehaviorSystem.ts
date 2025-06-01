@@ -1,82 +1,44 @@
 import Phaser from "phaser";
 import { AntManager } from "../entities/AntManager";
 import { ClayPackManager } from "../entities/ClayPackManager";
+import { AntStateMachineManager } from "./AntStateMachineManager";
+import { CastleData } from "../types";
 
 export class BehaviorSystem {
-  private antManager: AntManager;
-  private clayPackManager: ClayPackManager;
-  private castle: Phaser.GameObjects.Sprite;
+  private stateMachine: AntStateMachineManager;
 
   constructor(
-    antManager: AntManager,
+    private antManager: AntManager,
     clayPackManager: ClayPackManager,
-    castle: Phaser.GameObjects.Sprite
+    castle: Phaser.GameObjects.Sprite,
+    scene: Phaser.Scene,
+    damagePerHit: number = 5,
+    castleData?: CastleData
   ) {
-    this.antManager = antManager;
-    this.clayPackManager = clayPackManager;
-    this.castle = castle;
+    this.stateMachine = new AntStateMachineManager(
+      clayPackManager,
+      castle,
+      scene,
+      damagePerHit,
+      castleData
+    );
+
+    // Register all existing ants with the state machine
+    this.antManager.getAnts().forEach((ant) => {
+      const speed = this.antManager.getAntSpeed(ant);
+      this.stateMachine.registerAnt(ant, speed);
+    });
   }
 
   public updateAntBehavior(ant: Phaser.GameObjects.Sprite): void {
-    const antData = this.antManager.getAntData(ant);
-    if (!antData) return;
-
-    // Don't move if harvesting
-    if (antData.isHarvesting) {
-      const body = ant.body as Phaser.Physics.Arcade.Body;
-      body.setVelocity(0, 0);
-      body.setAcceleration(0, 0);
-      return;
-    }
-
-    let target: { x: number; y: number } | null = null;
-
-    if (!antData.isCarrying) {
-      // Check if we have a persistent target and it still exists
-      if (antData.persistentTarget && antData.persistentTarget.active) {
-        target = antData.persistentTarget;
-      } else {
-        // Find nearest clay pack and make it our persistent target
-        const nearestClayPack = this.clayPackManager.findNearestClayPack(ant);
-        if (nearestClayPack) {
-          antData.persistentTarget = nearestClayPack;
-          target = nearestClayPack;
-        }
-      }
-    } else {
-      // Clear persistent target when carrying clay
-      antData.persistentTarget = null;
-      // Go to castle
-      target = this.castle;
-    }
-
-    // Move towards target
-    if (target) {
-      this.moveTowardsTarget(ant, target, antData.speed);
-    }
+    this.stateMachine.updateAnt(ant, 16); // Assuming ~60fps (16ms delta)
   }
 
-  private moveTowardsTarget(
-    ant: Phaser.GameObjects.Sprite,
-    target: { x: number; y: number },
-    speed: number
-  ): void {
-    const distance = Phaser.Math.Distance.Between(
-      ant.x,
-      ant.y,
-      target.x,
-      target.y
-    );
-    const body = ant.body as Phaser.Physics.Arcade.Body;
+  public getCurrentState(ant: Phaser.GameObjects.Sprite) {
+    return this.stateMachine.getCurrentState(ant);
+  }
 
-    if (distance > 8) {
-      const angle = Phaser.Math.Angle.Between(ant.x, ant.y, target.x, target.y);
-      body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-
-      // Update facing direction
-      ant.setFlipX(target.x < ant.x);
-    } else {
-      body.setVelocity(0, 0);
-    }
+  public getContext(ant: Phaser.GameObjects.Sprite) {
+    return this.stateMachine.getContext(ant);
   }
 }
