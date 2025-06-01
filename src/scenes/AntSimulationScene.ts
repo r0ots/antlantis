@@ -57,6 +57,7 @@ export default class AntSimulationScene extends Phaser.Scene {
     this.load.image("ant", "assets/fourmi.png");
     this.load.image("castle", "assets/chateau.png");
     this.load.image("clayPack", "assets/grospackargile.png");
+    this.load.image("hit", "assets/hit.png");
   }
 
   create(): void {
@@ -94,7 +95,8 @@ export default class AntSimulationScene extends Phaser.Scene {
     );
     this.animationSystem = new AnimationSystem(
       this.antManager,
-      this.animationConfig
+      this.animationConfig,
+      this
     );
     this.collisionSystem = new CollisionSystem(
       this.antManager,

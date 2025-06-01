@@ -39,6 +39,7 @@ export interface AntData {
   harvestStartTime: number;
   harvestTarget: Phaser.GameObjects.Sprite | null;
   harvestAnimationPhase: number;
+  lastHitPhase: number;
 }
 
 export interface CastleData {

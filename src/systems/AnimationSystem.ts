@@ -14,10 +14,16 @@ export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
 export class AnimationSystem {
   private antManager: AntManager;
   private animationConfig: AnimationConfig;
+  private scene: Phaser.Scene;
 
-  constructor(antManager: AntManager, animationConfig: AnimationConfig) {
+  constructor(
+    antManager: AntManager,
+    animationConfig: AnimationConfig,
+    scene: Phaser.Scene
+  ) {
     this.antManager = antManager;
     this.animationConfig = animationConfig;
+    this.scene = scene;
   }
 
   public updateAntAnimation(ant: Phaser.GameObjects.Sprite): void {
@@ -40,7 +46,7 @@ export class AnimationSystem {
         this.animationConfig.harvestRotationSpeed
       );
 
-      // Create hitting/rotating animation
+      // Create hitting/rotating animation - only rotation, no position changes
       const hitCycle = Math.sin(antData.harvestAnimationPhase);
       const hitRotation =
         hitCycle * this.animationConfig.harvestRotationAmplitude;
@@ -50,11 +56,22 @@ export class AnimationSystem {
 
       ant.setRotation(hitRotation + rapidHit);
 
-      // Small forward motion during hit
-      const hitForward =
-        Math.max(0, Math.sin(antData.harvestAnimationPhase * 4)) * 3;
-      const direction = antData.harvestTarget.x > ant.x ? 1 : -1;
-      ant.x += hitForward * direction * 0.1;
+      // Spawn hit effect when hitting (at the peak of the rapid hit cycle)
+      const currentHitPhase = Math.floor(
+        (antData.harvestAnimationPhase * 4) / (Math.PI * 2)
+      );
+      if (
+        currentHitPhase > antData.lastHitPhase &&
+        Math.sin(antData.harvestAnimationPhase * 4) > 0.8
+      ) {
+        this.spawnHitEffect(ant, antData.harvestTarget);
+        antData.lastHitPhase = currentHitPhase;
+      }
+
+      // Keep ant position fixed - no movement during harvest
+      // Update previous position to current position to prevent drift detection
+      antData.previousX = ant.x;
+      antData.previousY = ant.y;
 
       return;
     }
@@ -95,5 +112,40 @@ export class AnimationSystem {
 
   public setAnimationConfig(config: AnimationConfig): void {
     this.animationConfig = config;
+  }
+
+  private spawnHitEffect(
+    ant: Phaser.GameObjects.Sprite,
+    target: Phaser.GameObjects.Sprite
+  ): void {
+    // Calculate position between ant and target
+    const midX = (ant.x + target.x) / 2;
+    const midY = (ant.y + target.y) / 2;
+
+    // Add some randomness to the position
+    const offsetX = Phaser.Math.Between(-5, 5);
+    const offsetY = Phaser.Math.Between(-5, 5);
+
+    // Create hit effect sprite
+    const hitEffect = this.scene.add.sprite(
+      midX + offsetX,
+      midY + offsetY,
+      "hit"
+    );
+    hitEffect.setScale(0.5); // Start small
+    hitEffect.setAlpha(1);
+
+    // Animate the hit effect
+    this.scene.tweens.add({
+      targets: hitEffect,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      alpha: 0,
+      duration: 300,
+      ease: "Power2",
+      onComplete: () => {
+        hitEffect.destroy();
+      },
+    });
   }
 }

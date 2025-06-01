@@ -25,6 +25,7 @@ export class BehaviorSystem {
     if (antData.isHarvesting) {
       const body = ant.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
+      body.setAcceleration(0, 0);
       return;
     }
 

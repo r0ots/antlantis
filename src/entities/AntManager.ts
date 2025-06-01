@@ -11,8 +11,8 @@ export const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   clayPackSize: { width: 45, height: 45 },
   castleSize: { width: 120, height: 120 },
   harvesting: {
-    harvestDistance: 50,
-    dropOffDistance: 40,
+    harvestDistance: 40,
+    dropOffDistance: 100,
     harvestAnimationDuration: 3000, // 3 seconds in milliseconds
   },
 };
@@ -52,6 +52,7 @@ export class AntManager {
         harvestStartTime: 0,
         harvestTarget: null,
         harvestAnimationPhase: 0,
+        lastHitPhase: 0,
       });
 
       this.ants.push(ant);
@@ -102,6 +103,7 @@ export class AntManager {
       data.harvestStartTime = Date.now();
       data.harvestTarget = target;
       data.harvestAnimationPhase = 0;
+      data.lastHitPhase = 0;
     }
   }
 
